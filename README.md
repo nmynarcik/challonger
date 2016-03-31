@@ -54,9 +54,11 @@ sudo make install```
 
 ## Installation
 
+Clone the repo. Change directory to the root of the bot files. Download all the dependencies.
 ```
 git clone https://github.com/nmynarcik/challonger.git
 cd challonger
+npm install
 ```
 
 Change `auth.json.example` to `auth.json`
