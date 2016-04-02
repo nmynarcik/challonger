@@ -1,6 +1,6 @@
 var app = require('express')();
 var AuthDetails = require('./auth.json');
-var SlackBot = require('slackbots');
+var Botkit = require('botkit');
  
 app.set('port', (process.env.PORT || 5000));
 
@@ -11,89 +11,35 @@ app.get('/', function(request, response) {
   console.log('App is running, server is listening on port ', app.get('port'));
 });
 
-var bot = new SlackBot(AuthDetails);
-
-bot.on('start', function() {
-    // more information about additional params https://api.slack.com/methods/chat.postMessage 
-    var params = {
-        // icon_emoji: ':cat:'
-    };
-    
-    // define channel, where bot exist. You can adjust it there https://my.slack.com/services  
-    // bot.postMessageToChannel('general', 'meow!', params);
-    
-    // define existing username instead of 'user_name' 
-    // bot.postMessageToUser('nathan', 'I\'ve Restarted!'); 
-    
-    // define private group instead of 'private_group', where bot exist 
-    // bot.postMessageToGroup('lunch', 'meow!', params); 
+var controller = Botkit.slackbot();
+var bot = controller.spawn(AuthDetails);
+bot.startRTM(function(err,bot,payload) {
+  if (err) {
+    throw new Error('Could not connect to Slack');
+  }
 });
 
-// bot.on('message', function(data) {
-//     // all ingoing events https://api.slack.com/rtm 
-//     console.log(data);
-//     var command = data.text.split(' ')[0];
 
-// });
-// console.log('thebot',bot);
+controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
 
-bot.on('message', function (msg) {
-  //check if message is a command
-  if(msg.user != bot.name && (msg.text[0] === '!' || msg.text.indexOf(bot.name.mention()) === 0)){
-        console.log('treating ' + msg.text + ' from ' + msg.user + ' as command');
-    var cmdTxt = msg.text.split(' ')[0].substring(1);
-        var suffix = msg.text.substring(cmdTxt.length+2);//add one for the ! and one for the space
-        if(msg.text.indexOf(bot.name.mention()) === 0){
-      try {
-        cmdTxt = msg.text.split(' ')[1];
-        suffix = msg.text.substring(bot.name.mention().length+cmdTxt.length+2);
-      } catch(e){ //no command
-        bot.sendMessage(msg.channel,'Yes?');
-        return;
-      }
+    bot.api.reactions.add({
+        timestamp: message.ts,
+        channel: message.channel,
+        name: 'robot_face',
+    }, function(err, res) {
+        if (err) {
+            bot.botkit.log('Failed to add emoji reaction :(', err);
         }
-    alias = aliases[cmdTxt];
-    if(alias){
-      console.log(cmdTxt + " is an alias, constructed command is " + alias.join(' ') + " " + suffix);
-      cmdTxt = alias[0];
-      suffix = alias[1] + " " + suffix;
-    }
-    var cmd = commands[cmdTxt];
-        if(cmdTxt === 'help'){
-            //help is special since it iterates over the other commands
-          bot.sendMessage(msg.user,"Available Commands:", function(){
-            for(var cmd in commands) {
-              var info = "!" + cmd;
-              var usage = commands[cmd].usage;
-              if(usage){
-                info += " " + usage;
-              }
-              var description = commands[cmd].description;
-              if(description){
-                info += "\n\t" + description;
-              }
-              bot.sendMessage(msg.user,info);
-            }
-          });
+    });
+
+
+    controller.storage.users.get(message.user, function(err, user) {
+        if (user && user.name) {
+            bot.reply(message, 'Hello ' + user.name + '!!');
+        } else {
+            bot.reply(message, 'Hello.');
         }
-    else if(cmd) {
-      try{
-        cmd.process(bot,msg,suffix);
-      } catch(e){
-        if(Config.debug){
-          bot.sendMessage(msg.channel, "command " + cmdTxt + " failed :(\n" + e.stack);
-        }else{
-            commandNotRecognized(msg);
-        }
-      }
-    } else {
-      if(Config.respondToInvalid){
-        bot.sendMessage(msg.channel, "Invalid command `" + cmdTxt+"`");
-      }else{
-            commandNotRecognized(msg);
-        }
-    }
-  }
+    });
 });
 
 var commands = {

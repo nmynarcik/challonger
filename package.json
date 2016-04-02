@@ -23,9 +23,9 @@
   },
   "homepage": "https://github.com/nmynarcik/challonger",
   "dependencies": {
+    "botkit": "0.0.15",
     "challonge": "^1.0.1",
     "express": "^4.13.4",
-    "slackbots": "^0.5.1"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
