@@ -19,6 +19,7 @@ gulp.task('develop', function () {
           , tasks: [] })
     .on('restart', function () {
     	console.log('BOT RESTARTED!');
+    	plugins.notify("Change Detected in <%= file.relative %>. Restarting bot!");
     })
 });
 
