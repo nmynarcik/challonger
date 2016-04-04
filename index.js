@@ -68,6 +68,34 @@ controller.on('mention',function(bot,message) {
   });
 });
 
+// the :penton: annoyance;
+// everytime penton posts a message, it will automatically react with :penton:
+// this shall be fun to watch
+controller.on('ambient',function(bot,message){
+    if(message.user === 'U03GALE9V'){
+        bot.api.reactions.add({
+            timestamp: message.ts,
+            channel: message.channel,
+            name: 'penton',
+        }, function(err, res) {
+            if (err) {
+                bot.botkit.log('Failed to add penton emoji reaction :(', err);
+            }
+        });
+    }
+    // the below works, only needed if you DONT Know their id
+    // var theUser = bot.api.users.info({user: message.user},function(err,response) {
+    //     if(err){
+    //         console.log('Can\'t get user,'+message.user+' ```'+err+'```');
+    //         return
+    //     }
+    //     console.log(response.user.name);
+    // });
+    // bot.api.users.list(function(err,response){
+    //     console.log('::users.list::',response);
+    // });
+});
+
 // reply to a direct message
 controller.on('direct_message',function(bot,message) {
 
