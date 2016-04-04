@@ -11,17 +11,15 @@ app.get('/', function(request, response) {
   console.log('App is running, server is listening on port ', app.get('port'));
 });
 
-var controller = Botkit.slackbot();
+var controller = Botkit.slackbot({
+  // json_file_store: 'data/'
+});
 var bot = controller.spawn(AuthDetails);
 bot.startRTM(function(err,bot,payload) {
   if (err) {
     throw new Error('Could not connect to Slack');
   }
 });
-
-// var controller = Botkit.slackbot({
-//   json_file_store: 'data/'
-// });
 
 
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
