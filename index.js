@@ -46,34 +46,73 @@ controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', funct
     });
 });
 
-// reply to @bot hello
-controller.on('mention',function(bot,message) {
+controller.hears(['create'], 'direct_message,direct_mention', function(bot,message) {
+    bot.startConversation(message,function(err,convo) {
+        convo.ask('Oh! Would you like to create a new tournament?',[
+            {
+                pattern: bot.utterances.yes,
+                callback: function(response,convo){
+                    convo.say('Great! Lets get that setup for you...');
+                    convo.ask('Who all will be joining the tournament?',function(response,convo){
+                        convo.next();
+                    });
+                    convo.ask('And, what will be the name of this tournament?',function(response,convo){
+                        convo.say('Nice! Please hold while I setup the bracket...');
+                        convo.next();
+                    });
+                    convo.next();
+                }
+            },
+            {
+                pattern: bot.utterances.no,
+                callback: function(response,convo){
+                    convo.say('Oh, my bad. Perhaps another time then.');
+                    convo.stop();
+                }
+            },
+            {
+                default: true,
+                callback: function(response,convo){
+                    //just repeat the question
+                    convo.repeat();
+                    convo.next();
+                }
+            }
+        ]);
 
-  // reply to _message_ by using the _bot_ object
-  // bot.reply(message,'I heard you mention me!');
-  // controller.storage.users.get(message.user,function(err,user) {
-  //   console.log('using storage for '+user);
-
-  //   });
-  bot.api.users.info({user: message.user},function(err,response) {
-    var theUser;
-    var retort = mentionComments[Math.floor(Math.random() * mentionComments.length)];
-    if(err){
-        console.log(err);
-        bot.reply(message,"Something went wrong, contact @nathan! ```"+err+"```");
-        return;
-    }
-    console.log(response.user.name);
-    theUser = response.user.name;
-    retort = retort.replace("{NICK}", theUser);
-    bot.reply(message,retort);
-  });
+        convo.on('end',function(convo) {
+            if (convo.status=='completed') {
+                var res = convo.extractResponses();
+                // bot.botkit.log('answers',res);
+                challonge_plugin.create(res);
+            }else{
+                convo.say('Welp, looks like we didn\'t finish the setup process. Let me know if you would like to create a tournament.');
+            }
+        });
+    });
 });
 
-// the :penton: annoyance;
-// everytime penton posts a message, it will automatically react with :penton:
-// this shall be fun to watch
+controller.hears(['cookie'], 'ambient', function(bot,message) {
+    if(message.text.length === 6){
+        bot.reply(message,'Do you jump off bridges when told, too? :stuck_out_tongue_winking_eye: ');
+    }
+});
+
+// reply to @bot hello
+controller.on('mention,direct_mention',function(bot,message) {
+    var retort = mentionComments[Math.floor(Math.random() * mentionComments.length)];
+    var theUser = getUserName(message.user,function(theName){
+        console.log('sending message');
+        retort = retort.replace("{NICK}", theName);
+        bot.reply(message,retort);
+    });
+});
+
 controller.on('ambient',function(bot,message){
+    bot.botkit.log('Message:',message);
+    // the :penton: annoyance;
+    // everytime penton posts a message
+    // automatically react with :penton:
     if(message.user === 'U03GALE9V'){
         bot.api.reactions.add({
             timestamp: message.ts,
@@ -85,26 +124,28 @@ controller.on('ambient',function(bot,message){
             }
         });
     }
-    // the below works, only needed if you DONT Know their id
-    // var theUser = bot.api.users.info({user: message.user},function(err,response) {
-    //     if(err){
-    //         console.log('Can\'t get user,'+message.user+' ```'+err+'```');
-    //         return
-    //     }
-    //     console.log(response.user.name);
-    // });
-    // bot.api.users.list(function(err,response){
-    //     console.log('::users.list::',response);
-    // });
 });
+
+
 
 // reply to a direct message
 controller.on('direct_message',function(bot,message) {
 
   // reply to _message_ by using the _bot_ object
   bot.reply(message,'You are talking directly to me? Look, I\'m trying to work here...shouldn\'t you?');
-});	
+});
 
+var getUserName = function(id,callback){
+    console.log('::getUserName::',id);
+    var theUser = new Promise(function(resolve,reject) {
+        bot.api.users.info({user: id},function(err,response) {
+            if(response.user){
+                console.log('::gotUserName::',response.user.name);
+                callback(response.user.name);
+            }
+        });
+    })
+}
 var commands = {
 	"help": {
 		usage: "",
@@ -121,7 +162,7 @@ var mentionComments = [
     "Someone didn't bother reading my carefully prepared memo on commonly-used passwords. Now, then, as I so meticulously pointed out, the four most-used passwords are: love, sex, secret, and God. So, would your holiness care to change her password?",
     "Type \"cookie\", you idiot.",
     "Did someone say my name?",
-    "/me  is starting to hear things...",
+    "Is it me or am I starting to hear things?...",
     "You're in the butter zone now, baby.",
     "Thank you {NICK}! But our Princess is in another castle!",
     "\"When I get all excited about a topic I start gesticulating.\" -Ian Murdock",
@@ -142,6 +183,7 @@ var mentionComments = [
     "Show me your moves, {NICK}!",
     "{NICK}, feeling happy is a f*#%ing skill. Learn it!",
     "…",
+    "I'm a friend of Sarah Connor. I was told she was here. Can I see her please?",
     "It’s dangerous to go alone; take this! :hammer:",
     "Hey dudes thanks, for rescuing me. Let's go for a burger....Ha! Ha! Ha! Ha! - The President",
     "{NICK}, you must construct additional pylons.",
@@ -154,6 +196,7 @@ var mentionComments = [
     "Aren't you a little short for a stormtrooper?",
     "Hey {NICK}, stay a while, and listen!",
     "In the year 200x a super robot named Mega Man was created.",
+    "I need your clothes, your boots and your motorcycle.",
     "Boomshakalaka!",
     "I need a weapon.",
     "Wakka wakka wakka!",
@@ -167,6 +210,7 @@ var mentionComments = [
     "This is some rescue. You came in here and you didn't have a plan for getting out?",
     "He's the brains, sweetheart!",
     "Wake me when you need me.",
+    "Negative. The T-1000's highest probability for success now will be to copy Sarah Connor and to wait for you to make contact with her.",
     "Mos Eisley spaceport. You will never find a more wretched hive of scum and villainy.",
     "Into the garbage chute, flyboy!",
     "Hey hey hey it's time to make some carrrrazzzyy money are ya ready? Here we go!",
@@ -181,18 +225,20 @@ var mentionComments = [
     "You're all clear, kid! Now let's blow this thing and go home!",
     "These blast points - too accurate for sandpeople. Only imperial stormtroopers are so precise.",
     "I've got a very bad feeling about this.",
+    "My CPU is a neural-net processor; a learning computer. But Skynet presets the switch to read-only when we're sent out alone.",
     "You've never heard of the Millennium Falcon? ... It's the ship that made the Kessel run in less than 12 parsecs.",
     "When I left you, I was but the learner, now I am the master.",
-    "/me  thinks {NICK} talks too much.",
+    "I thinks {NICK} talks too much.",
     "{NICK} has died of dysentery",
     "I am error. :warning:",
     "Fus-ro-dah!",
     "{NICK}, Finish Him!",
     "I find your lack of faith disturbing.",
-    "I am the great mighty poo, and I’m going to throw my shit at you.",
+    "I am the great mighty poo, and I’m going to throw my :poop: at you.",
     "This is your fault, {NICK}, I'm going to kill you. And all the cake is gone. You don't even care, do you?",
     "Use the Force, {NICK}",
     "You don't need to see his identification ... These aren't the droids you're looking for ... He can go about his business ... Move along.",
+    "Come with me if You want to Live!",
     "Help me {NICK}. You're my only hope.",
     "No one said you have to like me, but you're in MY house, buster!",
     "I'm fine... We're all fine here. How are you?",
