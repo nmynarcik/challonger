@@ -1,7 +1,9 @@
 var app = require('express')();
 var AuthDetails = require('./auth.json');
 var Botkit = require('botkit');
- 
+var Challonge = require('./challonge_plugin.js');
+var challonge_plugin = new Challonge();
+
 app.set('port', (process.env.PORT || 5000));
 
 //For avoidong Heroku $PORT error
@@ -21,7 +23,7 @@ bot.startRTM(function(err,bot,payload) {
   }
 });
 
-
+// simple hello world schtuff
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
 
     bot.api.reactions.add({
