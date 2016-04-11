@@ -83,8 +83,22 @@ controller.hears(['create'], 'direct_message,direct_mention', function(bot,messa
         convo.on('end',function(convo) {
             if (convo.status=='completed') {
                 var res = convo.extractResponses();
+                var user = getUserName(message.user,function(name){
+                    res.creator = name;
+                    challonge_plugin.create(res,function(response){
+                        console.log(response);
+                        if(response.errors){
+                            bot.reply(message,'Oops! Looks like an error occured.');
+                            bot.reply(message,'```'+response.errors+'```');
+                            return;
+                        }
+                        // var resObj = JSON.stringify(eval("(" + response + ")"));
+                        // console.log('::resObj::',resObj["tournament"]);
+                        bot.reply(message,'Great Success! You have created a tournament. Check it out! '+ response.tournament.live_image_url);
+                        // bot.reply(message,'Want to add more people? Send them here to sign up: '+response.tournament.full_challonge_url);
+                    });
+                });
                 // bot.botkit.log('answers',res);
-                challonge_plugin.create(res);
             }else{
                 convo.say('Welp, looks like we didn\'t finish the setup process. Let me know if you would like to create a tournament.');
             }
@@ -109,7 +123,7 @@ controller.on('mention,direct_mention',function(bot,message) {
 });
 
 controller.on('ambient',function(bot,message){
-    bot.botkit.log('Message:',message);
+    // bot.botkit.log('Message:',message);
     // the :penton: annoyance;
     // everytime penton posts a message
     // automatically react with :penton:
