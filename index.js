@@ -60,6 +60,10 @@ controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', funct
 controller.hears(['list'], 'direct_message,direct_mention', function(bot, message) {
   challonge_plugin.list(function(tData){
     // console.log('::tournaments::',tData);
+    if(!tData.length){
+      bot.reply(message,'Hmm, looks like there are no tournaments. You should do something about that ;)');
+      return;
+    }
     var msg = '```';
     msg += 'ID  Name  Progress';
     msg += '\n-------------------';
@@ -228,12 +232,64 @@ var getUserData = function(id,callback){
     });
 }
 
+// lets see if we can incorporate this method of available commands
 var commands = {
 	"help": {
 		usage: "",
-		description: "returns the help menu",
-		process: function(bot, msg, suffix) {}
-	}
+		description: "returns this menu",
+		process: function(bot, msg, suffix) {
+      // listAvailableCommands(commands);
+    }
+	},
+  "list": {
+    usage: "@challonger: list",
+    description: "returns the list of tournaments",
+    process: function(bot, msg, suffix) {
+      // put it here
+    }
+  },
+  "create": {
+    usage: "@challonger: create",
+    description: "create a tournament",
+    process: function(bot,msg,suffix) {
+      // do something
+    }
+  },
+  "add": {
+    usage: "@challonger: add <username> <tournament id>",
+    description: "add a user to a specific tournament",
+    process: function(bot,msg,suffix){
+      // yep, here too
+    }
+  },
+  "delete": {
+    usage: "delete <tournament id>",
+    description: "delete a current tournament",
+    process: function(bot,msg,suffix){
+      // same ol same ol
+    }
+  },
+  "start": {
+    usage: "start <tournament id>",
+    description: "starts the given tournament",
+    process: function(bot,msg,suffix){
+      // process checkins first!!
+    }
+  },
+  "reset": {
+    usage: "reset <tournament id>",
+    description: "resets the given tournament",
+    process: function(bot,msg,suffix){
+      // reset tournament
+    }
+  },
+  "finalize": {
+    usage: "finalize <tournament id>",
+    description: "finalizes the given tournament",
+    process: function(bot,msg,suffix){
+      // end the tournament
+    }
+  }
 }
 
 var mentionComments = [
