@@ -22,7 +22,7 @@ bot.startRTM(function(err,bot,payload) {
   if (err) {
     throw new Error('Could not connect to Slack');
   }
-  getAllUsers();
+  // getAllUsers();
 });
 
 var getAllUsers = function(){
@@ -47,7 +47,6 @@ controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', funct
         }
     });
 
-
     controller.storage.users.get(message.user, function(err, user) {
         if (user && user.name) {
             bot.reply(message, 'Hello ' + user.name + '!!');
@@ -58,7 +57,21 @@ controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', funct
     });
 });
 
-controller.hears(['create'], 'direct_message,direct_mention', function(bot,message) {
+controller.hears(['list'], 'direct_message,direct_mention', function(bot, message) {
+  challonge_plugin.list(function(tData){
+    // console.log('::tournaments::',tData);
+    var msg = '```';
+    msg += 'ID  Name  Progress';
+    msg += '\n-------------------';
+    tData.forEach(function(index){
+      msg += '\n' + index.tournament.id + '  ' + index.tournament.name + '  ' + index.tournament.progress_meter + '%';
+    });
+    msg += '```';
+    bot.reply(message, msg);
+  });
+});
+
+controller.hears(['create'], 'direct_message,direct_mention', function(bot, message) {
     bot.startConversation(message,function(err,convo) {
         convo.ask('Oh! Would you like to create a new tournament?',[
             {
@@ -183,26 +196,36 @@ controller.on('direct_message',function(bot,message) {
 
 var getUserData = function(id,callback){
     console.log('::getUserData::',id);
-    var theUser = new Promise(function(resolve,reject) {
-        bot.api.users.info({user: id},function(err,response) {
-            if(response.user){
-                // console.log('::userdata::',response.user);
-                controller.storage.users.save({
-                  id: id,
-                  name:response.user.name,
-                  email: response.user.profile.email
-                }, function(err) {
-                  bot.botkit.log('user-stored',response.user.name);
-                });
-                // console.log('::gotUserName::',response.user.name);
-                if(callback){
-                  callback(response.user); //TODO change this to return the user object
-                }else{
-                    return response.user;
-                }
+    controller.storage.users.get(id, function(err, user) {
+        if (user && user.name) {
+            if(callback){
+              callback(user);
+            }else{
+              return user;
             }
-        });
-    })
+        } else {
+          var theUser = new Promise(function(resolve,reject) {
+              bot.api.users.info({user: id},function(err,response) {
+                  if(response.user){
+                      // console.log('::userdata::',response.user);
+                      controller.storage.users.save({
+                        id: id,
+                        name:response.user.name,
+                        email: response.user.profile.email
+                      }, function(err) {
+                        bot.botkit.log('user-stored',response.user.name);
+                      });
+                      // console.log('::gotUserName::',response.user.name);
+                      if(callback){
+                        callback(response.user); //TODO change this to return the user object
+                      }else{
+                          return response.user;
+                      }
+                  }
+              });
+          });
+        }
+    });
 }
 
 var commands = {
