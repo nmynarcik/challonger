@@ -23,11 +23,9 @@
   },
   "homepage": "https://github.com/nmynarcik/challonger",
   "dependencies": {
-    "ajax-request": "^1.2.1",
     "botkit": "0.0.15",
     "challonge": "^1.0.1",
     "express": "^4.13.4",
-    "node-serialize": "0.0.4",
     "request": "^2.70.0"
   },
   "devDependencies": {

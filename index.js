@@ -14,14 +14,25 @@ app.get('/', function(request, response) {
 });
 
 var controller = Botkit.slackbot({
-  // json_file_store: 'data/'
+  json_file_store: 'data/'
 });
+
 var bot = controller.spawn(AuthDetails);
 bot.startRTM(function(err,bot,payload) {
   if (err) {
     throw new Error('Could not connect to Slack');
   }
+  getAllUsers();
 });
+
+var getAllUsers = function(){
+  controller.storage.users.all(function(err, all_user_data) {
+    if(err){
+      bot.botkit.log('::ERROR::',err);
+    }
+    console.log('::userdata::',all_user_data);
+  });
+}
 
 // simple hello world schtuff
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
@@ -41,6 +52,7 @@ controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', funct
         if (user && user.name) {
             bot.reply(message, 'Hello ' + user.name + '!!');
         } else {
+            getUserData(message.user); //lets capture their data for later
             bot.reply(message, 'Hello.');
         }
     });
@@ -83,19 +95,18 @@ controller.hears(['create'], 'direct_message,direct_mention', function(bot,messa
         convo.on('end',function(convo) {
             if (convo.status=='completed') {
                 var res = convo.extractResponses();
-                var user = getUserName(message.user,function(name){
-                    res.creator = name;
+                var user = getUserData(message.user,function(user){
+                    res.creator = user.name;
                     challonge_plugin.create(res,function(response){
-                        console.log(response);
+                        // console.log(response);
                         if(response.errors){
                             bot.reply(message,'Oops! Looks like an error occured.');
                             bot.reply(message,'```'+response.errors+'```');
                             return;
                         }
-                        // var resObj = JSON.stringify(eval("(" + response + ")"));
-                        // console.log('::resObj::',resObj["tournament"]);
-                        bot.reply(message,'Great Success! You have created a tournament. Check it out! '+ response.tournament.live_image_url);
-                        // bot.reply(message,'Want to add more people? Send them here to sign up: '+response.tournament.full_challonge_url);
+                        addParticipants(res['Who all will be joining the tournament?'],response.tournament.id,function(){
+                            bot.reply(message,'Great Success! You have created a tournament. Check it out! '+ response.tournament.full_challonge_url);
+                        });
                     });
                 });
                 // bot.botkit.log('answers',res);
@@ -106,6 +117,25 @@ controller.hears(['create'], 'direct_message,direct_mention', function(bot,messa
     });
 });
 
+var addParticipants = function(userData,tid,cb){
+    var parts = userData.split(' ');
+    console.log('::parts::',parts);
+    parts.forEach(function(user){
+        if(user.substring(0,2) == '<@'){
+            user = user.substring(2,user.length - 1);
+            getUserData(user,function(response){
+                console.log('::got user::',response);
+                challonge_plugin.addUser(response.profile.email,tid); //add their email and let challonge do the magic
+            });
+        }else{
+            challonge_plugin.addUser(user,tid); //just add their name because no user id was given
+        }
+        // console.log('::user::',user);
+    });
+    if(cb)
+        cb(); //should all be done, lets callback
+}
+
 controller.hears(['cookie'], 'ambient', function(bot,message) {
     if(message.text.length === 6){
         bot.reply(message,'Do you jump off bridges when told, too? :stuck_out_tongue_winking_eye: ');
@@ -115,14 +145,16 @@ controller.hears(['cookie'], 'ambient', function(bot,message) {
 // reply to @bot hello
 controller.on('mention,direct_mention',function(bot,message) {
     var retort = mentionComments[Math.floor(Math.random() * mentionComments.length)];
-    var theUser = getUserName(message.user,function(theName){
+    var theUser = getUserData(message.user,function(user){
         console.log('sending message');
-        retort = retort.replace("{NICK}", theName);
+        retort = retort.replace("{NICK}", user.name);
         bot.reply(message,retort);
     });
 });
 
 controller.on('ambient',function(bot,message){
+    getUserData(message.user);
+
     // bot.botkit.log('Message:',message);
     // the :penton: annoyance;
     // everytime penton posts a message
@@ -149,17 +181,30 @@ controller.on('direct_message',function(bot,message) {
   bot.reply(message,'You are talking directly to me? Look, I\'m trying to work here...shouldn\'t you?');
 });
 
-var getUserName = function(id,callback){
-    console.log('::getUserName::',id);
+var getUserData = function(id,callback){
+    console.log('::getUserData::',id);
     var theUser = new Promise(function(resolve,reject) {
         bot.api.users.info({user: id},function(err,response) {
             if(response.user){
-                console.log('::gotUserName::',response.user.name);
-                callback(response.user.name);
+                // console.log('::userdata::',response.user);
+                controller.storage.users.save({
+                  id: id,
+                  name:response.user.name,
+                  email: response.user.profile.email
+                }, function(err) {
+                  bot.botkit.log('user-stored',response.user.name);
+                });
+                // console.log('::gotUserName::',response.user.name);
+                if(callback){
+                  callback(response.user); //TODO change this to return the user object
+                }else{
+                    return response.user;
+                }
             }
         });
     })
 }
+
 var commands = {
 	"help": {
 		usage: "",
