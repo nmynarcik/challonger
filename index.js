@@ -56,8 +56,28 @@ controller.hears(['create'], 'direct_message,direct_mention', function(bot, mess
     commands.create.process(bot,message);
 });
 
+controller.hears(['help'], 'direct_message,direct_mention', function(bot, message) {
+    commands.help.process(bot,message);
+});
+
 controller.hears(['add'], 'direct_message,direct_mention', function(bot, message) {
     commands.add.process(bot,message);
+});
+
+controller.hears(['delete'], 'direct_message,direct_mention', function(bot, message) {
+    commands.delete.process(bot,message);
+});
+
+controller.hears(['start'], 'direct_message,direct_mention', function(bot, message) {
+    commands.start.process(bot,message);
+});
+
+controller.hears(['reset'], 'direct_message,direct_mention', function(bot, message) {
+    commands.reset.process(bot,message);
+});
+
+controller.hears(['finalize'], 'direct_message,direct_mention', function(bot, message) {
+    commands.finalize.process(bot,message);
 });
 
 controller.hears(['cookie'], 'ambient', function(bot,message) {
@@ -100,7 +120,7 @@ controller.on('direct_message',function(bot,message) {
 
   // reply to _message_ by using the _bot_ object
   bot.reply(message,'You are talking directly to me? Look, I\'m trying to work here...shouldn\'t you?');
-  bot.reply(message,'LOL j/k! What can I help you with? (_psst_, type `help` if you need to)');
+  bot.reply(message,'LOL j/k! What can I help you with? (_psst_, type `help` to see what I can do)');
 });
 
 var getUserData = function(id,callback){
@@ -142,6 +162,14 @@ var getAllUsers = function(){
     }
     console.log('::userdata::',all_user_data);
   });
+}
+
+var listAvailableCommands = function(cmds,channel){
+    var msg = '';
+    for ( cmd in cmds ) {
+        msg += '*' + cmd + '*: ' + cmds[cmd]['description'] + ' ```' + cmds[cmd]['usage'] + '```\n\n';
+    }
+    bot.reply(channel,msg);
 }
 
 var AskGameType = function(convo){
@@ -207,169 +235,173 @@ var gameIds = {
 
 // lets see if we can incorporate this method of available commands
 var commands = {
-	"help": {
-		usage: "",
-		description: "returns this menu",
-		process: function(bot, msg) {
-      // listAvailableCommands(commands);
-    }
-	},
-  "list": {
-    usage: "@challonger: list",
-    description: "returns the list of tournaments",
-    process: function(bot, message) {
-      challonge_plugin.list(function(tData){
-        // console.log('::tournaments::',tData);
-        if(!tData.length){
-          bot.reply(message,'Hmm, looks like there are no tournaments. You should do something about that ;)');
-          return;
+    "help": {
+        usage: "@challonger: help",
+        description: "returns this menu",
+        process: function(bot, msg) {
+            listAvailableCommands(commands,msg);
         }
-        var msg = '```';
-        msg += 'ID  |   Name   |  Game Type  |  Progress  ';
-        msg += '\n-----------------------------------------';
-        tData.forEach(function(index){
-            console.log(':: game_id ::',index.tournament.game_id);
-          msg += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + gameIds.getKey(index.tournament.game_id) + '  |  ' + index.tournament.progress_meter + '%';
-        });
-        msg += '```';
-        bot.reply(message, msg);
-      });
-    }
-  },
-  "create": {
-    usage: "@challonger: create",
-    description: "create a tournament",
-    process: function(bot,msg) {
-        bot.startConversation(msg,function(err,convo) {
-            convo.ask('Oh! Would you like to create a new tournament?',[
-                {
-                    pattern: bot.utterances.yes,
-                    callback: function(response,convo){
-                        convo.say('Great! Lets get that setup for you...');
-                        AskGameType(convo);
-                        convo.next();
-                    }
-                },
-                {
-                    pattern: bot.utterances.no,
-                    callback: function(response,convo){
-                        bot.reply(msg,'Oh, my bad. Perhaps another time then.');
-                        setTimeout(function(){
-                            convo.stop();
-                        },400);
-                    }
-                },
-                {
-                    default: true,
-                    callback: function(response,convo){
-                        //just repeat the question
-                        convo.repeat();
-                        convo.next();
-                    }
+    },
+    "list": {
+        usage: "@challonger: list",
+        description: "returns the list of tournaments",
+        process: function(bot, message) {
+            challonge_plugin.list(function(tData){
+                // console.log('::tournaments::',tData);
+                if(!tData.length){
+                  bot.reply(message,'Hmm, looks like there are no tournaments. You should do something about that ;)');
+                  return;
                 }
-            ]);
+                var msg = '```';
+                msg += 'ID  |   Name   |  Game Type  |  Progress  ';
+                msg += '\n-----------------------------------------';
+                tData.forEach(function(index){
+                    console.log(':: game_id ::',index.tournament.game_id);
+                  msg += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + getKey(game_ids,index.tournament.game_id) + '  |  ' + index.tournament.progress_meter + '%';
+                });
+                msg += '```';
+                bot.reply(message, msg);
+            });
+        }
+    },
+    "create": {
+        usage: "@challonger: create",
+        description: "create a tournament",
+        process: function(bot,msg) {
+            bot.startConversation(msg,function(err,convo) {
+                convo.ask('Oh! Would you like to create a new tournament?',[
+                    {
+                        pattern: bot.utterances.yes,
+                        callback: function(response,convo){
+                            convo.say('Great! Lets get that setup for you...');
+                            AskGameType(convo);
+                            convo.next();
+                        }
+                    },
+                    {
+                        pattern: bot.utterances.no,
+                        callback: function(response,convo){
+                            bot.reply(msg,'Oh, my bad. Perhaps another time then.');
+                            setTimeout(function(){
+                                convo.stop();
+                            },400);
+                        }
+                    },
+                    {
+                        default: true,
+                        callback: function(response,convo){
+                            //just repeat the question
+                            convo.repeat();
+                            convo.next();
+                        }
+                    }
+                ]);
 
-            convo.on('end',function(convo) {
-                console.log(':: convo status ::',convo.status);
-                if (convo.status=='completed') {
-                    var res = convo.extractResponses();
-                    var user = getUserData(msg.user,function(user){
+                convo.on('end',function(convo) {
+                    console.log(':: convo status ::',convo.status);
+                    if (convo.status=='completed') {
+                        var res = convo.extractResponses();
+                        var user = getUserData(msg.user,function(user){
 
-                        var tObj = {
-                            name: res['And, what will be the name of this tournament?'],
-                            tournament_type: 'single_elimination',
-                            url: res['And, what will be the name of this tournament?'].split(' ').join('_').substring(0, 40) + '_' + Date.now(),
-                            show_rounds: true,
-                            subdomain: 'match-dallas',
-                            private: true,
-                            game_id: gameIds[res['What game will this tournament be for? (Pong, Foosball, 8-Ball, 9-Ball)']],
-                            notify_users_when_matches_open: true,
-                            notify_users_when_the_tournament_ends: true,
-                            description: 'Tournament created from Slack by: @' + user.name,
-                          };
+                            var tObj = {
+                                name: res['And, what will be the name of this tournament?'],
+                                tournament_type: 'single_elimination',
+                                url: res['And, what will be the name of this tournament?'].split(' ').join('_').substring(0, 40) + '_' + Date.now(),
+                                show_rounds: true,
+                                subdomain: 'match-dallas',
+                                private: true,
+                                game_id: gameIds[res['What game will this tournament be for? (Pong, Foosball, 8-Ball, 9-Ball)']],
+                                notify_users_when_matches_open: true,
+                                notify_users_when_the_tournament_ends: true,
+                                description: 'Tournament created from Slack by: @' + user.name,
+                              };
 
-                        challonge_plugin.create(tObj,function(response){
-                            // console.log(response);
-                            if(response.errors){
-                                bot.reply(msg,'Oops! Looks like an error occured.');
-                                bot.reply(msg,'```'+response.errors+'```');
-                                return;
-                            }
-                            var parts = res['Who all will be joining the tournament?'].split(' ');
-                            parts.forEach(function(user){
-                                if(user.substring(0,2) == '<@'){
-                                    user = user.substring(2,user.length - 1);
-                                    getUserData(user,function(userData){
-                                        console.log('::got user::',userData);
-                                        challonge_plugin.addUser(userData.profile.email,response.tournament.id); //add their email and let challonge do the magic
-                                    });
-                                }else{
-                                    challonge_plugin.addUser(user,response.tournament.id); //just add their name because no user id was given
+                            challonge_plugin.create(tObj,function(response){
+                                // console.log(response);
+                                if(response.errors){
+                                    bot.reply(msg,'Oops! Looks like an error occured.');
+                                    bot.reply(msg,'```'+response.errors+'```');
+                                    return;
                                 }
-                                // console.log('::user::',user);
+                                var parts = res['Who all will be joining the tournament?'].split(' ');
+                                parts.forEach(function(user){
+                                    if(user.substring(0,2) == '<@'){
+                                        user = user.substring(2,user.length - 1);
+                                        getUserData(user,function(userData){
+                                            console.log('::got user::',userData);
+                                            challonge_plugin.addUser(userData.profile.email,response.tournament.id); //add their email and let challonge do the magic
+                                        });
+                                    }else{
+                                        challonge_plugin.addUser(user,response.tournament.id); //just add their name because no user id was given
+                                    }
+                                    // console.log('::user::',user);
+                                });
+                                bot.reply(msg,'Great Success! You have created a tournament. Check it out! '+ response.tournament.full_challonge_url);
                             });
-                            bot.reply(msg,'Great Success! You have created a tournament. Check it out! '+ response.tournament.full_challonge_url);
                         });
-                    });
-                    // bot.botkit.log('answers',res);
-                }else{
-                    convo.say('Welp, looks like we didn\'t finish the setup process. Let me know if you would like to create a tournament.');
-                }
+                        // bot.botkit.log('answers',res);
+                    }else{
+                        convo.say('Welp, looks like we didn\'t finish the setup process. Let me know if you would like to create a tournament.');
+                    }
+                });
             });
-        });
-    }
-  },
-  "add": {
-    usage: "@challonger: add <username> <tournament id>",
-    description: "add a user to a specific tournament",
-    process: function(bot,msg,cb){
-        // bot.botkit.log('*** msg ***',msg);
-        var parts = msg.text.trim().split(" ");
-        var user = parts[1];
-        var tid = parts[2];
-        var name;
-        if(user.substring(0,2) == '<@'){
-            user = user.substring(2,user.length - 1);
-            getUserData(user,function(response){
-                challonge_plugin.addUser(response.profile.email,tid); //add their email and let challonge do the magic
-            });
-        }else{
-            challonge_plugin.addUser(user,tid); //just add their name because no user id was given
         }
-        bot.reply(msg,'I have added '+user+' to that tournament.');
-        // console.log('::user::',user);
-        if(cb)
-            cb(); //should all be done, lets callback
+    },
+    "add": {
+        usage: "@challonger: add <username> <tournament id>",
+        description: "add a user to a specific tournament",
+        process: function(bot,msg,cb){
+            // bot.botkit.log('*** msg ***',msg);
+            var parts = msg.text.trim().split(" ");
+            var user = parts[1];
+            var tid = parts[2];
+            var name;
+            if(user.substring(0,2) == '<@'){
+                user = user.substring(2,user.length - 1);
+                getUserData(user,function(response){
+                    challonge_plugin.addUser(response.profile.email,tid); //add their email and let challonge do the magic
+                });
+            }else{
+                challonge_plugin.addUser(user,tid); //just add their name because no user id was given
+            }
+            bot.reply(msg,'I have added '+user+' to that tournament.');
+            // console.log('::user::',user);
+            if(cb)
+                cb(); //should all be done, lets callback
+        }               
+    },
+    "delete": {
+        usage: "@challonger: delete <tournament id>",
+        description: "delete a current tournament _(coming soon)_",
+        process: function(bot,msg){
+            // same ol same ol
+            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+        }
+    },
+    "start": {
+        usage: "@challonger: start <tournament id>",
+        description: "starts the given tournament _(coming soon)_",
+        process: function(bot,msg){
+            // process checkins first!!
+            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+        }
+    },
+    "reset": {
+        usage: "@challonger: reset <tournament id>",
+        description: "resets the given tournament _(coming soon)_",
+        process: function(bot,msg){
+            // reset tournament
+            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+        }
+    },
+    "finalize": {
+        usage: "@challonger: finalize <tournament id>",
+        description: "finalizes the given tournament _(coming soon)_",
+        process: function(bot,msg){
+            // end the tournament
+            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+        }
     }
-  },
-  "delete": {
-    usage: "delete <tournament id>",
-    description: "delete a current tournament",
-    process: function(bot,msg){
-      // same ol same ol
-    }
-  },
-  "start": {
-    usage: "start <tournament id>",
-    description: "starts the given tournament",
-    process: function(bot,msg){
-      // process checkins first!!
-    }
-  },
-  "reset": {
-    usage: "reset <tournament id>",
-    description: "resets the given tournament",
-    process: function(bot,msg){
-      // reset tournament
-    }
-  },
-  "finalize": {
-    usage: "finalize <tournament id>",
-    description: "finalizes the given tournament",
-    process: function(bot,msg){
-      // end the tournament
-    }
-  }
 }
 
 var mentionComments = [
@@ -466,9 +498,9 @@ var mentionComments = [
     "Sorry {NICK}, our princess is in another castle!"
 ];
 
-Object.prototype.getKey = function(value){ //this will allow a reverse lookup of game_id
-  for(var key in this){
-    if(this[key] == value){
+var getKey = function(arr,value){ //this will allow a reverse lookup of game_id
+  for(var key in arr){
+    if(arr[key] == value){
       return key;
     }
   }
