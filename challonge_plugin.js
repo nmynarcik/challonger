@@ -25,30 +25,16 @@ ChallongePlugin.prototype.list = function(callback) {
 
 // create a tournament
 ChallongePlugin.prototype.create = function(tourneyData, callback) {
-  //TODO all this stuff (down to line 32) needs to be done outside of this plugin
   console.log('::tourneyData::', tourneyData);
 
-  var tObj = {
-    name: tourneyData['And, what will be the name of this tournament?'],
-    tournament_type: 'single_elimination',
-    url: tourneyData['And, what will be the name of this tournament?'].split(' ').join('_').substring(0, 40) + '_' + Date.now(),
-    show_rounds: true,
-    subdomain: 'match-dallas',
-    private: true,
-    notify_users_when_matches_open: true,
-    notify_users_when_the_tournament_ends: true,
-    description: 'Tournament created from Slack by: ' + tourneyData.creator,
-  };
-
-  // console.log('::url::',tObj.url);
-
   var rUrl = 'https://api.challonge.com/v1/tournaments.json?api_key=' + AuthDetails.challonge
-        + '&tournament[name]=' + tObj.name
-        + '&tournament[url]=' + tObj.url
-        + '&tournament[subdomain]=' + tObj.subdomain
-        + '&tournament[description]=' + tObj.description
+        + '&tournament[name]=' + tourneyData.name
+        + '&tournament[url]=' + tourneyData.url
+        + '&tournament[subdomain]=' + tourneyData.subdomain
+        + '&tournament[description]=' + tourneyData.description
         + '&tournament[private]=true'
-        + '&tournament[show_rounds]=true'
+        + '&tournament[game_id]='+ tourneyData.game_id
+        + '&tournament[notify_users_when_matches_open]=true'
         + '&tournament[notify_users_when_matches_open]=true'
         + '&tournament[notify_users_when_the_tournament_ends]=true';
 
