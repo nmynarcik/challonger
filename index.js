@@ -95,13 +95,12 @@ controller.on('ambient',function(bot,message){
     }
 });
 
-
-
 // reply to a direct message
 controller.on('direct_message',function(bot,message) {
 
   // reply to _message_ by using the _bot_ object
   bot.reply(message,'You are talking directly to me? Look, I\'m trying to work here...shouldn\'t you?');
+  bot.reply(message,'LOL j/k! What can I help you with? (_psst_, type `help` if you need to)');
 });
 
 var getUserData = function(id,callback){
@@ -114,26 +113,24 @@ var getUserData = function(id,callback){
               return user;
             }
         } else {
-          var theUser = new Promise(function(resolve,reject) {
-              bot.api.users.info({user: id},function(err,response) {
-                  if(response.user){
-                      // console.log('::userdata::',response.user);
-                      controller.storage.users.save({
-                        id: id,
-                        name:response.user.name,
-                        email: response.user.profile.email
-                      }, function(err) {
-                        bot.botkit.log('user-stored',response.user.name);
-                      });
-                      // console.log('::gotUserName::',response.user.name);
-                      if(callback){
-                        callback(response.user); //TODO change this to return the user object
-                      }else{
-                          return response.user;
-                      }
+          bot.api.users.info({user: id},function(err,response) {
+              if(response.user){
+                  // console.log('::userdata::',response.user);
+                  controller.storage.users.save({
+                    id: id,
+                    name:response.user.name,
+                    email: response.user.profile.email
+                  }, function(err) {
+                    bot.botkit.log('user-stored',response.user.name);
+                  });
+                  // console.log('::gotUserName::',response.user.name);
+                  if(callback){
+                    callback(response.user); //TODO change this to return the user object
+                  }else{
+                      return response.user;
                   }
-              });
-          // });
+              }
+          });
         }
     });
 }
