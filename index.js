@@ -257,7 +257,7 @@ var commands = {
                 msg += '\n-----------------------------------------';
                 tData.forEach(function(index){
                     console.log(':: game_id ::',index.tournament.game_id);
-                  msg += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + getKey(game_ids,index.tournament.game_id) + '  |  ' + index.tournament.progress_meter + '%';
+                  msg += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + getKey(gameIds,index.tournament.game_id) + '  |  ' + index.tournament.progress_meter + '%';
                 });
                 msg += '```';
                 bot.reply(message, msg);
