@@ -8,8 +8,6 @@ function ChallongePlugin() {
   });
 }
 
-console.log('::Challonge Init::');
-
 // list tournaments
 ChallongePlugin.prototype.list = function(callback) {
   request('https://api.challonge.com/v1/tournaments.json?api_key=' + AuthDetails.challonge + '&subdomain=' + 'match-dallas', function(error, response, body) {
@@ -27,7 +25,7 @@ ChallongePlugin.prototype.list = function(callback) {
 
 // create a tournament
 ChallongePlugin.prototype.create = function(tourneyData, callback) {
-  console.log('::tourneyData::', tourneyData);
+  // console.log('::tourneyData::', tourneyData);
 
   var rUrl = 'https://api.challonge.com/v1/tournaments.json?api_key=' + AuthDetails.challonge
         + '&tournament[name]=' + tourneyData.name
@@ -59,7 +57,7 @@ ChallongePlugin.prototype.create = function(tourneyData, callback) {
 
 // add a user
 ChallongePlugin.prototype.addUser = function(user, tid, callback) {
-  console.log('::Challonge:: AddUser Called', user);
+  console.log('::Challonge-AddUser:: ', user);
   var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/participants.json?api_key=' + AuthDetails.challonge;
 
   if (user.indexOf('@') > -1) {
