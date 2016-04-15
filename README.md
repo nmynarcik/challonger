@@ -120,6 +120,12 @@ Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the
 @challonger: finalize <tournament id>
 ```
 
+## TODOs
+- [ ] Support reporting matches from bot
+- [ ] Slack Button implementation for sharing
+- [ ] Play a Tourney Using bot
+- [ ] Drink a :beer:
+
 
 ## Contributing
 
