@@ -35,3 +35,6 @@ node_modules
 #project specific files
 auth.json
 data
+.DS_Store
+png/
+svg/
