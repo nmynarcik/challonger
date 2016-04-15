@@ -1,6 +1,10 @@
-var app = require('express')();
+var express = require('express');
+var app = express();
 var AuthDetails = require('./auth.json');
 var Botkit = require('botkit');
+var svg_to_png = require('svg-to-png');
+var http = require('http');
+var fs = require('fs');
 var Challonge = require('./challonge_plugin.js');
 var challonge_plugin = new Challonge();
 
@@ -12,6 +16,8 @@ app.get('/', function(request, response) {
 }).listen(app.get('port'), function() {
   console.log('App is running, server is listening on port ', app.get('port'));
 });
+
+app.use('/', express.static(__dirname + '/'));
 
 var controller = Botkit.slackbot({
   json_file_store: 'data/'
@@ -82,6 +88,10 @@ controller.hears(['finalize'], 'direct_message,direct_mention', function(bot, me
 
 controller.hears(['join'], 'direct_message,direct_mention', function(bot, message) {
     commands.join.process(bot,message);
+});
+
+controller.hears(['start'], 'direct_message,direct_mention', function(bot, message) {
+    commands.start.process(bot,message);
 });
 
 controller.hears(['cookie'], 'ambient', function(bot,message) {
@@ -227,6 +237,14 @@ var AskTourneyName = function(convo){
     });
 }
 
+var SVGtoPNG = function(file,callback){
+    console.log('fName',file);
+    svg_to_png.convert(file, file.split('svg').join('png')).then(function(data){
+        callback(data);
+        return;
+    });
+}
+
 var gameIds = {
     '8-Ball'    : 773,
     '9-Ball'    : 485,
@@ -247,9 +265,9 @@ var commands = {
         usage: "@challonger: list",
         description: "returns the list of tournaments",
         process: function(bot, message) {
-          console.log(':: list tournaments:: ');
+          // console.log(':: list tournaments:: ',message);
             challonge_plugin.list(function(tData){
-                console.log('::tournaments::',tData);
+                // console.log('::tournaments::',tData);
                 if(!tData.length){
                   bot.reply(message,'Hmm, looks like there are no tournaments. You should do something about that ;)');
                   return;
@@ -258,16 +276,52 @@ var commands = {
                 rtext += 'ID  |   Name   |  Game Type  |  Participants  |  Progress  |  Link  ';
                 rtext += '\n-------------------------------------------------------------------';
                 tData.forEach(function(index){
-                    // console.log(':: game_id ::',index.tournament.game_id);
+                    // console.log(':: tourneydata ::',index.tournament);
                   rtext += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + getKey(gameIds,index.tournament.game_id) + '  |  ' + index.tournament.participants_count + '  |  ' + index.tournament.progress_meter + '%' + '  |  <' + index.tournament.full_challonge_url + '|Visit Tourney Page »>';
                 });
                 rtext += '```';
-                console.log(rtext);
+                // console.log(rtext);
                 var reply_with_attachments = {
                   'username': AuthDetails.name,
                   'text': rtext,
                   'icon_url': AuthDetails.icon
                 };
+                // var fileName = tData[3].tournament.name.split(' ').join('-')+'.svg';
+                // var file = fs.createWriteStream('svg/'+fileName);
+                // var request = http.get(tData[3].tournament.live_image_url,function(resp){
+                //     resp.pipe(file);
+                //     file.on('finish',function(){
+                //         file.close();
+                //         SVGtoPNG('svg/'+tData[3].tournament.name.split(' ').join('-')+'.svg',function(data){
+                //             console.log('::data::',data);
+                //             var r = request.post('https://slack.com/api/files.upload', function (err, res, body) {
+                //                 console.log('it was called');
+                //               if(err){
+                //                     bot.reply(message,'```'+err+'```');
+                //                 }else{
+                //                     console.log(res);
+                //                 }
+                //             });
+                //             console.log('HIYA!');
+                //             var form = r.form();
+                //             form.append(token, AuthDetails.token);
+                //             form.append('channels',message.channel);
+                //             form.append('filename', tData[3].tournament.name.split(' ').join('-') + '.png');
+                //             form.append(file, fs.createReadStream(data));
+                //             // bot.api.files.upload({
+                //             //     file: '@'+data,
+                //             //     channels: message.channel,
+                //             //     filename: tData[3].tournament.name.split(' ').join('-') + '.png'
+                //             // },function(err,response) {
+                //             //     if(err){
+                //             //         bot.reply(message,'```'+err+'```');
+                //             //     }else{
+                //             //         console.log(response);
+                //             //     }
+                //             // });
+                //         });
+                //     });
+                // })
                 bot.reply(message, reply_with_attachments);
             });
         }
@@ -321,7 +375,7 @@ var commands = {
                                 game_id: gameIds[res['What game will this tournament be for? (Pong, Foosball, 8-Ball, 9-Ball)']],
                                 notify_users_when_matches_open: true,
                                 notify_users_when_the_tournament_ends: true,
-                                description: 'Tournament created from Slack by: @' + user.name,
+                                description: 'Tournament created from Slack by: ' + user.name,
                               };
 
                             challonge_plugin.create(tObj,function(response){
@@ -344,6 +398,7 @@ var commands = {
                                     }
                                     // console.log('::user::',user);
                                 });
+
                                 bot.reply(msg,'Great Success! You have created a tournament. Check it out! '+ response.tournament.full_challonge_url);
                             });
                         });
@@ -408,10 +463,17 @@ var commands = {
     },
     "start": {
         usage: "@challonger: start <tournament id>",
-        description: "starts the given tournament _(coming soon)_",
+        description: "starts the given tournament",
         process: function(bot,msg){
-            // process checkins first!!
-            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+            var parts = msg.text.trim().split(" ");
+            var tid = parts[1];
+            challonge_plugin.start(tid,function(response){
+                if(response.errors){
+                    bot.reply(msg,'```' + response.errors + '```');
+                    return;
+                }
+                bot.reply(msg,response.tournament.name + ' has started. Round 1...GOOOOOO!');
+            });
         }
     },
     "reset": {

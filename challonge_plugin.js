@@ -84,4 +84,23 @@ ChallongePlugin.prototype.addUser = function(user, tid, callback) {
   });
 };
 
+ChallongePlugin.prototype.start = function(tid, callback){
+	var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/start.json?api_key=' + AuthDetails.challonge;
+	request.post({
+	    url: rUrl,
+	    headers: {
+	      'Content-Type': 'application/json',
+	      'Content-Length': 0,
+	    },
+	  }, function optionalCallback(err, httpResponse, body) {
+	    if (err) {
+	      return err;
+	    }
+
+	    // console.log('::STATUS::',httpResponse.statusCode);
+	    // console.log('Success!  Server responded with:', body);
+	    if (callback)
+	      callback(body);
+	  });
+}
 module.exports = ChallongePlugin;
