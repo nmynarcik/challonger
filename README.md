@@ -73,31 +73,31 @@ Run the bot
 
 Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the Challonge tournament page. I plan to add support for reporting matches _soon™_.
 
-*help*​: returns this menu
+**help**​: returns this menu
 ```@challonger: help```
 
-​*list*​: returns the list of tournaments
+​**list**​: returns the list of tournaments
 ```@challonger: list```
 
-​*create*​: create a tournament
+​**create**​: create a tournament
 ```@challonger: create```
 
-​*join*​: join the specified tournament
+​**join**​: join the specified tournament
 ```@challonger: join <tournament id>```
 
-​*add*​: add a user to a specific tournament
+​**add**​: add a user to a specific tournament
 ```@challonger: add <username> <tournament id>```
 
-​*delete*​: delete a current tournament
+​**delete**​: delete a current tournament
 ```@challonger: delete <tournament id>```
 
-​*start*​: starts the given tournament
+​**start**​: starts the given tournament
 ```@challonger: start <tournament id>```
 
-​*reset*​: resets the given tournament
+​**reset**​: resets the given tournament
 ```@challonger: reset <tournament id>```
 
-​*finalize*​: finalizes the given tournament
+​**finalize**​: finalizes the given tournament
 ```@challonger: finalize <tournament id>```
 
 
