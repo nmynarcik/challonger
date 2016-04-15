@@ -19,6 +19,8 @@ ChallongePlugin.prototype.list = function(callback) {
       } else {
         return JSON.parse(body);
       }
+    }else{
+      return error;
     }
   });
 };
@@ -46,7 +48,7 @@ ChallongePlugin.prototype.create = function(tourneyData, callback) {
     },
   }, function optionalCallback(err, httpResponse, body) {
     if (err) {
-      return console.error('upload failed:', err);
+      return err;
     }
 
     // console.log('::STATUS::',httpResponse.statusCode);
@@ -74,7 +76,7 @@ ChallongePlugin.prototype.addUser = function(user, tid, callback) {
     },
   }, function optionalCallback(err, httpResponse, body) {
     if (err) {
-      return console.error('::Adding User Failed::', err);
+      return err;
     }
 
     // console.log('::STATUS::',httpResponse.statusCode);
