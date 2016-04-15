@@ -1,7 +1,7 @@
 {
-	"token" : "slack-token",
-	"name" : "bot-name",
-	"challonge": "challonge-api-key",
+  "token" : "slack-token",
+  "name" : "bot-name",
+  "challonge": "challonge-api-key",
   "subdomain": "<subdomain of Organization on Challonge>",
-	"icon": "<Avatar of your bot>"
+  "icon": "<Avatar of your bot>"
 }
