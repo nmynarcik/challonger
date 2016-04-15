@@ -114,7 +114,8 @@ Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the
 
 ## History
 
-TODO: Write history
+### 15.4.2016
+Release of version 1.0.0
 
 
 ## License
