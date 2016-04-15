@@ -66,9 +66,7 @@ Change `auth.json.example` to `auth.json`
 Enter the credentials needed in `auth.json`
 
 Run the bot
-```
-node index.js
-```
+```node index.js```
 
 
 ## Usage
@@ -100,7 +98,7 @@ Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the
 ```@challonger: reset <tournament id>```
 
 ​*finalize*​: finalizes the given tournament
-```@challonger: finalize <tournament id>
+```@challonger: finalize <tournament id>```
 
 
 ## Contributing
@@ -114,8 +112,8 @@ Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the
 
 ## History
 
-### 15.4.2016
-Release of version 1.0.0
+* 4/15/2016
+    * Release of version 1.0.0
 
 
 ## License
