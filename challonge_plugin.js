@@ -10,6 +10,7 @@ function ChallongePlugin() {
 
 // list tournaments
 ChallongePlugin.prototype.list = function(callback) {
+  console.log('::Challonge-list:: ');
   request('https://api.challonge.com/v1/tournaments.json?api_key=' + AuthDetails.challonge + '&subdomain=' + 'match-dallas', function(error, response, body) {
     if (!error && response.statusCode == 200) {
       if (callback) {
@@ -17,7 +18,7 @@ ChallongePlugin.prototype.list = function(callback) {
       } else {
         return JSON.parse(body);
       }
-    }else{
+    } else {
       return error;
     }
   });
@@ -25,7 +26,7 @@ ChallongePlugin.prototype.list = function(callback) {
 
 // create a tournament
 ChallongePlugin.prototype.create = function(tourneyData, callback) {
-  // console.log('::tourneyData::', tourneyData);
+  console.log('::Challonge-Create::');
 
   var rUrl = 'https://api.challonge.com/v1/tournaments.json?api_key=' + AuthDetails.challonge
         + '&tournament[name]=' + tourneyData.name
@@ -33,7 +34,7 @@ ChallongePlugin.prototype.create = function(tourneyData, callback) {
         + '&tournament[subdomain]=' + tourneyData.subdomain
         + '&tournament[description]=' + tourneyData.description
         + '&tournament[private]=true'
-        + '&tournament[game_id]='+ tourneyData.game_id
+        + '&tournament[game_id]=' + tourneyData.game_id
         + '&tournament[notify_users_when_matches_open]=true'
         + '&tournament[notify_users_when_matches_open]=true'
         + '&tournament[notify_users_when_the_tournament_ends]=true';
@@ -84,23 +85,93 @@ ChallongePlugin.prototype.addUser = function(user, tid, callback) {
   });
 };
 
-ChallongePlugin.prototype.start = function(tid, callback){
-	var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/start.json?api_key=' + AuthDetails.challonge;
-	request.post({
-	    url: rUrl,
-	    headers: {
-	      'Content-Type': 'application/json',
-	      'Content-Length': 0,
-	    },
-	  }, function optionalCallback(err, httpResponse, body) {
-	    if (err) {
-	      return err;
-	    }
+// start a tournament
+ChallongePlugin.prototype.start = function(tid, callback) {
+  console.log('::Challonge-Start::');
+  var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/start.json?api_key=' + AuthDetails.challonge;
+  request.post({
+      url: rUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': 0,
+      },
+    }, function optionalCallback(err, httpResponse, body) {
+      if (err) {
+        return err;
+      }
 
-	    // console.log('::STATUS::',httpResponse.statusCode);
-	    // console.log('Success!  Server responded with:', body);
-	    if (callback)
-	      callback(body);
-	  });
-}
+      // console.log('::STATUS::',httpResponse.statusCode);
+      // console.log('Success!  Server responded with:', body);
+      if (callback)
+        callback(JSON.parse(body));
+    });
+};
+
+// delete a tournament
+ChallongePlugin.prototype.destroy = function(tid, callback) {
+  console.log('::Challonge-Destroy::');
+  var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '.json?api_key=' + AuthDetails.challonge;
+  request({
+      url: rUrl,
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': 0,
+      },
+    }, function optionalCallback(err, httpResponse, body) {
+      if (err) {
+        return err;
+      }
+
+      // console.log('::STATUS::',httpResponse.statusCode);
+      // console.log('Success!  Server responded with:', body);
+      if (callback)
+        callback(body);
+    });
+};
+
+// reset a tournament
+ChallongePlugin.prototype.reset = function(tid, callback) {
+  console.log('::Challonge-Reset::');
+  var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/reset.json?api_key=' + AuthDetails.challonge;
+  request.post({
+      url: rUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': 0,
+      },
+    }, function optionalCallback(err, httpResponse, body) {
+      if (err) {
+        return err;
+      }
+
+      // console.log('::STATUS::',httpResponse.statusCode);
+      // console.log('Success!  Server responded with:', body);
+      if (callback)
+        callback(body);
+    });
+};
+
+// finalize tournament
+ChallongePlugin.prototype.finalize = function(tid, callback) {
+  console.log('::Challonge-Finalize::');
+  var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/finalize.json?api_key=' + AuthDetails.challonge;
+  request.post({
+    url: rUrl,
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': 0,
+    },
+  }, function optionalCallback(err, httpResponse, body) {
+    if (err) {
+      return err;
+    }
+
+    // console.log('::STATUS::',httpResponse.statusCode);
+    // console.log('Success!  Server responded with:', body);
+    if (callback)
+      callback(JSON.parse(body));
+  });
+};
+
 module.exports = ChallongePlugin;

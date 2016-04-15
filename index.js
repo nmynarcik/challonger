@@ -94,6 +94,10 @@ controller.hears(['start'], 'direct_message,direct_mention', function(bot, messa
     commands.start.process(bot,message);
 });
 
+controller.hears(['finalize'], 'direct_message,direct_mention', function(bot, message) {
+    commands.finalize.process(bot,message);
+});
+
 controller.hears(['cookie'], 'ambient', function(bot,message) {
     if(message.text.length === 6){
         bot.reply(message,'Do you jump off bridges when told, too? :stuck_out_tongue_winking_eye: ');
@@ -246,10 +250,11 @@ var SVGtoPNG = function(file,callback){
 }
 
 var gameIds = {
-    '8-Ball'    : 773,
-    '9-Ball'    : 485,
-    'Pong'      : 600,
-    'Foosball'  : 70
+    '8-Ball'      : 773,
+    '9-Ball'      : 485,
+    'Pong'        : 600,
+    'Foosball'    : 70,
+    'Unspecified' : 0
 }
 
 // lets see if we can incorporate this method of available commands
@@ -276,7 +281,7 @@ var commands = {
                 rtext += 'ID  |   Name   |  Game Type  |  Participants  |  Progress  |  Link  ';
                 rtext += '\n-------------------------------------------------------------------';
                 tData.forEach(function(index){
-                    // console.log(':: tourneydata ::',index.tournament);
+                  // console.log(':: tourneydata ::',index.tournament.game_id);
                   rtext += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + getKey(gameIds,index.tournament.game_id) + '  |  ' + index.tournament.participants_count + '  |  ' + index.tournament.progress_meter + '%' + '  |  <' + index.tournament.full_challonge_url + '|Visit Tourney Page »>';
                 });
                 rtext += '```';
@@ -370,7 +375,7 @@ var commands = {
                                 tournament_type: 'single_elimination',
                                 url: res['And, what will be the name of this tournament?'].split(' ').join('_').substring(0, 40) + '_' + Date.now(),
                                 show_rounds: true,
-                                subdomain: 'match-dallas',
+                                subdomain: AuthDetails.subdomain,
                                 private: true,
                                 game_id: gameIds[res['What game will this tournament be for? (Pong, Foosball, 8-Ball, 9-Ball)']],
                                 notify_users_when_matches_open: true,
@@ -455,10 +460,44 @@ var commands = {
     },
     "delete": {
         usage: "@challonger: delete <tournament id>",
-        description: "delete a current tournament _(coming soon)_",
+        description: "delete a current tournament",
         process: function(bot,msg){
-            // same ol same ol
-            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+          bot.startConversation(msg,function(err,convo) {
+              convo.ask('Are you sure you want to delete this tournament?',[
+                {
+                    pattern: bot.utterances.yes,
+                    callback: function(response,convo){
+                        convo.say(':cry: RIP my lil tourney...');
+                        var tid = msg.text.trim().split(' ')[1];
+                        challonge_plugin.destroy(tid,function(response){
+                          if(response.errors){
+                            bot.reply(msg,'```'+response.errors+'```');
+                          }else{
+                            bot.reply(msg,'Consider it done. :thumbs_up:');
+                          }
+                        });
+                        convo.next();
+                    }
+                },
+                {
+                    pattern: bot.utterances.no,
+                    callback: function(response,convo){
+                        bot.reply(msg,'WHEW! Good...I was about to :cry:');
+                        setTimeout(function(){
+                            convo.stop();
+                        },400);
+                    }
+                },
+                {
+                    default: true,
+                    callback: function(response,convo){
+                        //just repeat the question
+                        convo.repeat();
+                        convo.next();
+                    }
+                }
+              ]);
+          });
         }
     },
     "start": {
@@ -468,28 +507,54 @@ var commands = {
             var parts = msg.text.trim().split(" ");
             var tid = parts[1];
             challonge_plugin.start(tid,function(response){
+              console.log(response);
                 if(response.errors){
                     bot.reply(msg,'```' + response.errors + '```');
                     return;
                 }
-                bot.reply(msg,response.tournament.name + ' has started. Round 1...GOOOOOO!');
+                bot.reply(msg, '*' + response.tournament.name + '* has started. Round 1...GOOOOOO!');
+                var reply_with_attachments = {
+                  'username': AuthDetails.name,
+                  'text': 'Remember to report your scores on the <' + response.tournament.full_challonge_url + '|tournament page>.',
+                  'icon_url': AuthDetails.icon
+                };
+                bot.reply(msg, reply_with_attachments);
             });
         }
     },
     "reset": {
         usage: "@challonger: reset <tournament id>",
-        description: "resets the given tournament _(coming soon)_",
+        description: "resets the given tournament",
         process: function(bot,msg){
-            // reset tournament
-            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+            var tid = msg.text.trim().split(' ')[1];
+            challonge_plugin.reset(tid,function(response){
+              if(response.errors){
+                bot.reply(msg,'```'+response.errors+'```');
+              }else{
+                console.log('response:',response);
+                bot.reply(msg,'Tournament reset! No one has to know how bad that loss was. Don\'t worry, I won\'t tell anyone. :zipper_mouth_face:');
+              }
+            });
         }
     },
     "finalize": {
         usage: "@challonger: finalize <tournament id>",
-        description: "finalizes the given tournament _(coming soon)_",
+        description: "finalizes the given tournament",
         process: function(bot,msg){
-            // end the tournament
-            bot.reply(msg,'This feature is _Coming Soon_. Sorry!');
+          var tid = msg.text.trim().split(' ')[1];
+          challonge_plugin.finalize(tid,function(response){
+            if(response.errors){
+              bot.reply(msg,'```'+response.errors+'```');
+            }else{
+              console.log(response);
+              var reply_with_attachments = {
+                'username': AuthDetails.name,
+                'text': 'Results are in!!! Let\'s <'+response.tournament.full_challonge_url+'|see who won>!! ',
+                'icon_url': AuthDetails.icon
+              };
+              bot.reply(msg, reply_with_attachments);
+            }
+          });
         }
     }
 }
@@ -594,5 +659,5 @@ var getKey = function(arr,value){ //this will allow a reverse lookup of game_id
       return key;
     }
   }
-  return null;
+  return 0;
 };
