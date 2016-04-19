@@ -2,18 +2,19 @@ var express = require('express');
 var app = express();
 var AuthDetails = require('./auth.json');
 var Botkit = require('botkit');
-var svg_to_png = require('svg-to-png');
+var svgToPng = require('svg-to-png');
 var http = require('http');
+var request = require('request');
 var fs = require('fs');
 var Challonge = require('./challonge_plugin.js');
-var challonge_plugin = new Challonge();
+var challongePlugin = new Challonge();
 
 app.set('port', (process.env.PORT || 5000));
 
 //For avoidong Heroku $PORT error
 app.get('/', function(request, response) {
   response.send('Who\'s Ready for some Tourneys?!?!?!?');
-}).listen(app.get('port'), function() {
+}).listen(app.get('port'), function () {
   console.log('App is running, server is listening on port ', app.get('port'));
 });
 
@@ -27,31 +28,41 @@ var bot = controller.spawn(AuthDetails);
 bot.startRTM(function(err,bot,payload) {
   if (err) {
     throw new Error('Could not connect to Slack');
-  }
-  // getAllUsers();
+  }  // getAllUsers();
 });
 
+// var formData = { //test image upload
+//   file: fs.createReadStream(__dirname + '/png/Bracket-Test.png'),
+// };
+//
+// request.post({url:'https://slack.com/api/files.upload?token=' + AuthDetails.token + '&filename=Bracket-Test.png&channels=G0WQ9862C' , formData: formData}, function(err, httpResponse, body) {
+//   if (err) {
+//     return console.error('upload failed:', err);
+//   }
+//   console.log('Upload successful!  Server responded with:', body);
+// });
+
 // simple hello world schtuff
-controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function (bot, message) {
 
-    bot.api.reactions.add({
-        timestamp: message.ts,
-        channel: message.channel,
-        name: 'robot_face',
-    }, function(err, res) {
-        if (err) {
-            bot.botkit.log('Failed to add emoji reaction :(', err);
-        }
-    });
+  bot.api.reactions.add({
+    timestamp: message.ts,
+    channel: message.channel,
+    name: 'robot_face',
+  }, function (err, res) {
+    if (err) {
+      bot.botkit.log('Failed to add emoji reaction :(', err);
+    }
+  });
 
-    controller.storage.users.get(message.user, function(err, user) {
-        if (user && user.name) {
-            bot.reply(message, 'Hello ' + user.name + '!!');
-        } else {
-            getUserData(message.user); //lets capture their data for later
-            bot.reply(message, 'Hello.');
-        }
-    });
+  controller.storage.users.get(message.user, function (err, user) {
+    if (user && user.name) {
+      bot.reply(message, 'Hello ' + user.name + '!!');
+    } else {
+      getUserData(message.user); //lets capture their data for later
+      bot.reply(message, 'Hello.');
+    }
+  });
 });
 
 controller.hears(['list'], 'direct_message,direct_mention', function(bot, message) {
@@ -98,6 +109,14 @@ controller.hears(['finalize'], 'direct_message,direct_mention', function(bot, me
     commands.finalize.process(bot,message);
 });
 
+controller.hears(['matches'], 'direct_message,direct_mention', function(bot, message) {
+    commands.matches.process(bot,message);
+});
+
+controller.hears(['bracket'], 'direct_message,direct_mention', function(bot, message) {
+    commands.bracket.process(bot,message);
+});
+
 controller.hears(['cookie'], 'ambient', function(bot,message) {
     if(message.text.length === 6){
         bot.reply(message,'Do you jump off bridges when told, too? :stuck_out_tongue_winking_eye: ');
@@ -116,7 +135,7 @@ controller.on('mention,direct_mention',function(bot,message) {
 controller.on('ambient',function(bot,message){
     getUserData(message.user);
 
-    bot.botkit.log('Message:',message);
+    // bot.botkit.log('Message:',message);
     // the :penton: annoyance;
     // everytime penton posts a message
     // automatically react with :penton:
@@ -242,8 +261,9 @@ var AskTourneyName = function(convo){
 }
 
 var SVGtoPNG = function(file,callback){
-    console.log('fName',file);
-    svg_to_png.convert(file, file.split('svg').join('png')).then(function(data){
+    console.log('fName',file.split('svg').join('png'));
+
+    svgToPng.convert(file, __dirname+'/png/').then(function(data){
         callback(data);
         return;
     });
@@ -270,8 +290,8 @@ var commands = {
         usage: "@challonger: list",
         description: "returns the list of tournaments",
         process: function(bot, message) {
-          // console.log(':: list tournaments:: ',message);
-            challonge_plugin.list(function(tData){
+          console.log(':: list tournaments:: ',message);
+            challongePlugin.list(function(tData){
                 // console.log('::tournaments::',tData);
                 if(!tData.length){
                   bot.reply(message,'Hmm, looks like there are no tournaments. You should do something about that ;)');
@@ -291,42 +311,7 @@ var commands = {
                   'text': rtext,
                   'icon_url': AuthDetails.icon
                 };
-                // var fileName = tData[3].tournament.name.split(' ').join('-')+'.svg';
-                // var file = fs.createWriteStream('svg/'+fileName);
-                // var request = http.get(tData[3].tournament.live_image_url,function(resp){
-                //     resp.pipe(file);
-                //     file.on('finish',function(){
-                //         file.close();
-                //         SVGtoPNG('svg/'+tData[3].tournament.name.split(' ').join('-')+'.svg',function(data){
-                //             console.log('::data::',data);
-                //             var r = request.post('https://slack.com/api/files.upload', function (err, res, body) {
-                //                 console.log('it was called');
-                //               if(err){
-                //                     bot.reply(message,'```'+err+'```');
-                //                 }else{
-                //                     console.log(res);
-                //                 }
-                //             });
-                //             console.log('HIYA!');
-                //             var form = r.form();
-                //             form.append(token, AuthDetails.token);
-                //             form.append('channels',message.channel);
-                //             form.append('filename', tData[3].tournament.name.split(' ').join('-') + '.png');
-                //             form.append(file, fs.createReadStream(data));
-                //             // bot.api.files.upload({
-                //             //     file: '@'+data,
-                //             //     channels: message.channel,
-                //             //     filename: tData[3].tournament.name.split(' ').join('-') + '.png'
-                //             // },function(err,response) {
-                //             //     if(err){
-                //             //         bot.reply(message,'```'+err+'```');
-                //             //     }else{
-                //             //         console.log(response);
-                //             //     }
-                //             // });
-                //         });
-                //     });
-                // })
+
                 bot.reply(message, reply_with_attachments);
             });
         }
@@ -381,9 +366,10 @@ var commands = {
                                 notify_users_when_matches_open: true,
                                 notify_users_when_the_tournament_ends: true,
                                 description: 'Tournament created from Slack by: ' + user.name,
+                                check_in_duration: 1440
                               };
 
-                            challonge_plugin.create(tObj,function(response){
+                            challongePlugin.create(tObj,function(response){
                                 // console.log(response);
                                 if(response.errors){
                                     bot.reply(msg,'Oops! Looks like an error occured.');
@@ -396,15 +382,18 @@ var commands = {
                                         user = user.substring(2,user.length - 1);
                                         getUserData(user,function(userData){
                                             console.log('::got user::',userData);
-                                            challonge_plugin.addUser(userData.profile.email,response.tournament.id); //add their email and let challonge do the magic
+                                            challongePlugin.addUser(userData.profile.email,response.tournament.id); //add their email and let challonge do the magic
                                         });
                                     }else{
-                                        challonge_plugin.addUser(user,response.tournament.id); //just add their name because no user id was given
+                                        challongePlugin.addUser(user,response.tournament.id); //just add their name because no user id was given
                                     }
                                     // console.log('::user::',user);
                                 });
 
                                 bot.reply(msg,'Great Success! You have created a tournament. Check it out! '+ response.tournament.full_challonge_url);
+
+                                // lets post a bracket for the user
+                                commands.bracket.process(bot, msg, response.tournament.id);
                             });
                         });
                         // bot.botkit.log('answers',res);
@@ -425,14 +414,45 @@ var commands = {
             if(msg.user.substring(0,2) == '<@'){
                 user = msg.user.substring(2,msg.user.length - 1);
                 getUserData(user,function(response){
-                    challonge_plugin.addUser(response.profile.email,tid); //add their email and let challonge do the magic
+                    challongePlugin.addUser(response.profile.email,tid); //add their email and let challonge do the magic
                     bot.reply(msg,'I have added you to that tournament.');
                 });
             }else{
-                challonge_plugin.addUser(msg.user,tid); //just add their name because no user id was given
+                challongePlugin.addUser(msg.user,tid); //just add their name because no user id was given
                 bot.reply(msg,'I have added you to that tournament.');
             }
         }
+    },
+    "bracket": {
+      usage: "@challonger: bracket <tournament id>",
+      description: "return a bracket for a given tournament id",
+      process: function(bot,msg,uTid){
+        var parts = msg.text.trim().split(" ");
+        var tid = uTid || parts[1]; //if we call this with tid already provided, use that
+        challongePlugin.bracket(tid,function(resp){
+          var fileName = resp.tournament.name.split(' ').join('-');
+          var file = fs.createWriteStream('svg/'+fileName+'.svg');
+          var req = http.get(resp.tournament.live_image_url,function(resp){
+              resp.pipe(file);
+              file.on('finish',function(){
+                  file.close();
+                  SVGtoPNG('svg/'+fileName+'.svg',function(data){
+                    var formData = {
+                      file: fs.createReadStream(__dirname + '/png/' + fileName + '.png'),
+                    };
+                    console.log('fileName',formData.file);
+
+                    request.post({url:'https://slack.com/api/files.upload?token=' + AuthDetails.token + '&filename=' + fileName + '.png&channels='+msg.channel , formData: formData}, function(err, httpResponse, body) {
+                      if (err) {
+                        return bot.reply(msg,'Can\'t get the bracket: ```' + err + '```');
+                      }
+                      console.log('Upload successful!  Server responded with:', body);
+                    });
+                  });
+              });
+          });
+        });
+      }
     },
     "add": {
         usage: "@challonger: add <username> <tournament id>",
@@ -446,11 +466,11 @@ var commands = {
             if(user.substring(0,2) == '<@'){
                 user = user.substring(2,user.length - 1);
                 getUserData(user,function(response){
-                    challonge_plugin.addUser(response.profile.email,tid); //add their email and let challonge do the magic
+                    challongePlugin.addUser(response.profile.email,tid); //add their email and let challonge do the magic
                     bot.reply(msg,'I have added '+response.name+' to that tournament.');
                 });
             }else{
-                challonge_plugin.addUser(user,tid); //just add their name because no user id was given
+                challongePlugin.addUser(user,tid); //just add their name because no user id was given
                 bot.reply(msg,'I have added '+user+' to that tournament.');
             }
             // console.log('::user::',user);
@@ -469,7 +489,7 @@ var commands = {
                     callback: function(response,convo){
                         convo.say(':cry: RIP my lil tourney...');
                         var tid = msg.text.trim().split(' ')[1];
-                        challonge_plugin.destroy(tid,function(response){
+                        challongePlugin.destroy(tid,function(response){
                           if(response.errors){
                             bot.reply(msg,'```'+response.errors+'```');
                           }else{
@@ -506,7 +526,7 @@ var commands = {
         process: function(bot,msg){
             var parts = msg.text.trim().split(" ");
             var tid = parts[1];
-            challonge_plugin.start(tid,function(response){
+            challongePlugin.start(tid,function(response){
               console.log(response);
                 if(response.errors){
                     bot.reply(msg,'```' + response.errors + '```');
@@ -527,7 +547,7 @@ var commands = {
         description: "resets the given tournament",
         process: function(bot,msg){
             var tid = msg.text.trim().split(' ')[1];
-            challonge_plugin.reset(tid,function(response){
+            challongePlugin.reset(tid,function(response){
               if(response.errors){
                 bot.reply(msg,'```'+response.errors+'```');
               }else{
@@ -542,7 +562,7 @@ var commands = {
         description: "finalizes the given tournament",
         process: function(bot,msg){
           var tid = msg.text.trim().split(' ')[1];
-          challonge_plugin.finalize(tid,function(response){
+          challongePlugin.finalize(tid,function(response){
             if(response.errors){
               bot.reply(msg,'```'+response.errors+'```');
             }else{
@@ -550,12 +570,33 @@ var commands = {
               var reply_with_attachments = {
                 'username': AuthDetails.name,
                 'text': 'Results are in!!! Let\'s <'+response.tournament.full_challonge_url+'|see who won>!! ',
-                'icon_url': AuthDetails.icon
+                'icon_url': AuthDetails.icon,
+                'as_user': true
               };
               bot.reply(msg, reply_with_attachments);
             }
           });
         }
+    },
+    "matches": {
+      usage: "@challonger: matches <tournament id>",
+      description: "retrieve a tournaments match list",
+      process: function(bot,msg){
+        var tid = msg.text.trim().split(' ')[1];
+        challongePlugin.matches(tid,function(response){
+          if(response.errors){
+            bot.reply(msg,'```' + response.errors + '```');
+          }else{
+            if(response){
+              response.forEach(function(index){
+                bot.reply(msg,index.match.id + ' | ' + index.match.player1_id + ' vs. ' + index.match.player2_id);
+              });
+            }else{
+              bot.reply(msg,'I can\'t find any matches for that tournament. Make sure to start the tournament first.');
+            }
+          }
+        });
+      }
     }
 }
 

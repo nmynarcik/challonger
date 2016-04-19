@@ -174,4 +174,46 @@ ChallongePlugin.prototype.finalize = function(tid, callback) {
   });
 };
 
+// get matches
+ChallongePlugin.prototype.matches = function (tid, callback) {
+  console.log('::Challonge-Matches::', tid);
+  var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/matches.json?api_key=' + AuthDetails.challonge;
+  request({
+    url: rUrl,
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': 0,
+    },
+  }, function optionalCallback(err, httpResponse, body) {
+      if (err) {
+        return err;
+      }
+
+      // console.log('::STATUS::',httpResponse.statusCode);
+      // console.log('Success!  Server responded with:', body);
+      if (callback)
+        callback(JSON.parse(body));
+    });
+};
+
+ChallongePlugin.prototype.bracket = function (tid, callback) {
+  console.log('::Challonge-GetBracket::', tid);
+  var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '.json?api_key=' + AuthDetails.challonge;
+  request({
+    url: rUrl,
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': 0,
+    },
+  }, function optionalCallback(err, httpResponse, body) {
+    if (err) {
+      return err;
+    }
+
+    if (callback) {
+      callback(JSON.parse(body));
+    }
+  });
+};
+
 module.exports = ChallongePlugin;

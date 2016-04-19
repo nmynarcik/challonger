@@ -26,9 +26,10 @@
     "botkit": "0.0.15",
     "challonge": "^1.0.1",
     "express": "^4.13.4",
+    "form-data": "^1.0.0-rc4",
+    "pn": "^1.0.0",
     "request": "^2.70.0",
-    "svg-to-png": "^2.0.1",
-    "svg2png": "^3.0.0"
+    "svg-to-png": "^2.0.1"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
