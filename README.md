@@ -120,6 +120,11 @@ Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the
 @challonger: finalize <tournament id>
 ```
 
+​**bracket**​: get bracket of given tournament id
+```
+@challonger: bracket <tournament id>
+```
+
 ## TODOs
 - [ ] Support reporting matches from bot
 - [ ] Slack Button implementation for sharing
@@ -139,7 +144,7 @@ Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the
 ## History
 
 * 4/15/2016
-    * Release of version 1.0.0
+    * Release of version 0.0.1 (WIP)
 
 
 ## License
