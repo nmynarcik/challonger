@@ -6,6 +6,7 @@ var express = require('express');
     http = require('http'),
     request = require('request'),
     fs = require('fs'),
+    os = require('os'),
     Challonge = require('./challonge_plugin.js'),
     challongePlugin = new Challonge();
 
@@ -160,6 +161,15 @@ controller.on('rtm_close',function(bot,message){
   connectBot();
 });
 
+controller.hears(['uptime','identify yourself','who are you','what is your name'],'direct_message,direct_mention,mention',function(bot, message) {
+
+    var hostname = os.hostname();
+    var uptime = formatUptime(process.uptime());
+
+    bot.reply(message,':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '. My creator is <@' + AuthDetails.admin[0] + '>.');
+
+});
+
 // reply to a direct message
 controller.on('direct_message',function(bot,message) {
 
@@ -167,6 +177,24 @@ controller.on('direct_message',function(bot,message) {
   bot.reply(message,'You are talking directly to me? Look, I\'m trying to work here...shouldn\'t you?');
   bot.reply(message,'LOL j/k! What can I help you with? (_psst_, type `help` to see what I can do)');
 });
+
+var formatUptime = function(uptime) {
+    var unit = 'second';
+    if (uptime > 60) {
+        uptime = uptime / 60;
+        unit = 'minute';
+    }
+    if (uptime > 60) {
+        uptime = uptime / 60;
+        unit = 'hour';
+    }
+    if (uptime != 1) {
+        unit = unit + 's';
+    }
+
+    uptime = uptime + ' ' + unit;
+    return uptime;
+}
 
 var getUserData = function(id,callback){
     console.log('::getUserData::',id);
