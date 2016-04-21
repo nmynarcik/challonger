@@ -127,8 +127,9 @@ Challonger can't do _EVERYTHING_, ...yet. Reporting will need to be done via the
 
 ## TODOs
 - [x] ~~Delete bracket images after they have been uploaded~~
-- [ ] Better error reporting back to the user
 - [x] ~~Add [uptime command](https://github.com/howdyai/botkit/blob/master/examples/middleware_example.js)~~
+- [ ] Implement some kind of testing (Winston, Mocha, whatever)
+- [ ] Better error reporting back to the user
 - [ ] Save a log of commands/who did them/what happened?
 - [ ] Support reporting matches from bot
 - [ ] Slack Button implementation for sharing
