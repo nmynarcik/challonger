@@ -26,22 +26,24 @@ var controller = Botkit.slackbot({
 });
 
 var bot = controller.spawn(AuthDetails);
-bot.startRTM(function(err,bot,payload) {
-  if (err) {
-    throw new Error('Could not connect to Slack');
-  }  // getAllUsers();
-});
 
-// var formData = { //test image upload
-//   file: fs.createReadStream(__dirname + '/png/Bracket-Test.png'),
-// };
-//
-// request.post({url:'https://slack.com/api/files.upload?token=' + AuthDetails.token + '&filename=Bracket-Test.png&channels=G0WQ9862C' , formData: formData}, function(err, httpResponse, body) {
-//   if (err) {
-//     return console.error('upload failed:', err);
-//   }
-//   console.log('Upload successful!  Server responded with:', body);
-// });
+var connectBot = function(){
+  bot.startRTM(function(err,bot,payload) {
+    if (err) {
+      setTimeout(function(){
+        connectBot(); // keep trying every 30 secs
+      }, 30000);
+    }
+  });
+}
+
+connectBot();
+
+var tmpDirectory = __dirname + '/tmp/'; //tmp folder for our bracket image conversions
+
+if (!fs.existsSync(tmpDirectory)) {
+  fs.mkdirSync(tmpDirectory);
+}
 
 // simple hello world schtuff
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function (bot, message) {
@@ -154,6 +156,10 @@ controller.on('ambient',function(bot,message){
     }
 });
 
+controller.on('rtm_close',function(bot,message){
+  connectBot();
+});
+
 // reply to a direct message
 controller.on('direct_message',function(bot,message) {
 
@@ -263,11 +269,30 @@ var AskTourneyName = function(convo){
 var SVGtoPNG = function(file,callback){
     console.log('fName',file, tmpDirectory);
 
-    svgToPng.convert(file, __dirname+'/png/').then(function(data){
+    svgToPng.convert(file, tmpDirectory).then(function(data){
         callback(data);
         return;
     });
 }
+
+var NotifyAdmin = function(msg) {
+  bot.botkit.log('warning','Notifying Admin');
+  AuthDetails.admin.forEach(function(idx){
+    bot.api.im.open({
+      token: AuthDetails.token,
+      user: idx
+    },function(err,response){
+      if(response.ok){
+        bot.say(
+          {
+            text: msg,
+            channel: response.channel.id // a valid slack channel, group, mpim, or im ID
+          }
+        );
+      }
+    });
+  });
+};
 
 var gameIds = {
     '8-Ball'      : 773,
@@ -431,22 +456,30 @@ var commands = {
         var tid = uTid || parts[1]; //if we call this with tid already provided, use that
         challongePlugin.bracket(tid,function(resp){
           var fileName = resp.tournament.name.split(' ').join('-');
-          var file = fs.createWriteStream('svg/'+fileName+'.svg');
+          var file = fs.createWriteStream(tmpDirectory+fileName+'.svg');
           var req = http.get(resp.tournament.live_image_url,function(resp){
               resp.pipe(file);
               file.on('finish',function(){
                   file.close();
-                  SVGtoPNG('svg/'+fileName+'.svg',function(data){
+                  SVGtoPNG(tmpDirectory + fileName + '.svg',function(data){
+                    fs.unlink(tmpDirectory + fileName + '.svg', (err) => {
+                      if (err) throw err;
+                      console.log('successfully deleted ' + tmpDirectory + fileName + '.svg');
+                    });
                     var formData = {
-                      file: fs.createReadStream(__dirname + '/png/' + fileName + '.png'),
+                      file: fs.createReadStream(tmpDirectory + fileName + '.png'),
                     };
-                    console.log('fileName',formData.file);
+                    // console.log('fileName',formData.file);
 
                     request.post({url:'https://slack.com/api/files.upload?token=' + AuthDetails.token + '&filename=' + fileName + '.png&channels='+msg.channel , formData: formData}, function(err, httpResponse, body) {
                       if (err) {
                         return bot.reply(msg,'Can\'t get the bracket: ```' + err + '```');
                       }
-                      console.log('Upload successful!  Server responded with:', body);
+                      fs.unlink(tmpDirectory + fileName + '.png', (err) => {
+                        if (err) throw err;
+                        console.log('successfully deleted ' + tmpDirectory + fileName + '.png');
+                      });
+                      console.log('Upload successful!', fileName);
                     });
                   });
               });
@@ -480,43 +513,50 @@ var commands = {
     },
     "delete": {
         usage: "@challonger: delete <tournament id>",
-        description: "delete a current tournament",
+        description: "delete a current tournament - admins only",
         process: function(bot,msg){
-          bot.startConversation(msg,function(err,convo) {
-              convo.ask('Are you sure you want to delete this tournament?',[
-                {
-                    pattern: bot.utterances.yes,
-                    callback: function(response,convo){
-                        convo.say(':cry: RIP my lil tourney...');
-                        var tid = msg.text.trim().split(' ')[1];
-                        challongePlugin.destroy(tid,function(response){
-                          if(response.errors){
-                            bot.reply(msg,'```'+response.errors+'```');
-                          }else{
-                            bot.reply(msg,'Consider it done. :thumbs_up:');
-                          }
-                        });
-                        convo.next();
+          getUserData(msg.user,function(data){
+              bot.startConversation(msg,function(err,convo) {
+                  convo.ask('Are you sure you want to delete this tournament? (Must be an admin)',[
+                    {
+                        pattern: bot.utterances.yes,
+                        callback: function(response,convo){
+                            if(data.is_admin){
+                                convo.say(':cry: RIP my lil tourney...');
+                                var tid = msg.text.trim().split(' ')[1];
+                                challongePlugin.destroy(tid,function(response){
+                                  if(response.errors){
+                                    bot.reply(msg,'```'+response.errors+'```');
+                                  }else{
+                                    bot.reply(msg,'Consider it done. :thumbs_up:');
+                                  }
+                                });
+                                convo.next();
+                            }else{
+                              bot.reply(msg,'Sorry, only admins can delete tourneys. I\'ve notified my creator.');
+                              NotifyAdmin(':warning: Spy sappin\' my sentry!!! <@' + data.id + '> is trying to delete a tournament!');
+                            }
+                        }
+                    },
+                    {
+                        pattern: bot.utterances.no,
+                        callback: function(response,convo){
+                            bot.reply(msg,'WHEW! Good...I was about to :cry:');
+                            setTimeout(function(){
+                                convo.stop();
+                            },400);
+                        }
+                    },
+                    {
+                        default: true,
+                        callback: function(response,convo){
+                            //just repeat the question
+                            convo.repeat();
+                            convo.next();
+                        }
                     }
-                },
-                {
-                    pattern: bot.utterances.no,
-                    callback: function(response,convo){
-                        bot.reply(msg,'WHEW! Good...I was about to :cry:');
-                        setTimeout(function(){
-                            convo.stop();
-                        },400);
-                    }
-                },
-                {
-                    default: true,
-                    callback: function(response,convo){
-                        //just repeat the question
-                        convo.repeat();
-                        convo.next();
-                    }
-                }
-              ]);
+                  ]);
+              });
           });
         }
     },
