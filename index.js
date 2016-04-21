@@ -545,7 +545,7 @@ var commands = {
         process: function(bot,msg){
           getUserData(msg.user,function(data){
               bot.startConversation(msg,function(err,convo) {
-                  convo.ask('Are you sure you want to delete this tournament? (Must be an admin)',[
+                  convo.ask('Are you sure you want to delete this tournament? (_Must be an admin_)',[
                     {
                         pattern: bot.utterances.yes,
                         callback: function(response,convo){
@@ -600,10 +600,10 @@ var commands = {
                     bot.reply(msg,'```' + response.errors + '```');
                     return;
                 }
-                bot.reply(msg, '*' + response.tournament.name + '* has started. Round 1...GOOOOOO!');
+                commands.matches.process(bot,msg);
                 var reply_with_attachments = {
                   'username': AuthDetails.name,
-                  'text': 'Remember to report your scores on the <' + response.tournament.full_challonge_url + '|tournament page>.',
+                  'text': '*' + response.tournament.name + '* has started. Round 1...GOOOOOO! \nRemember to report your scores on the <' + response.tournament.full_challonge_url + '|tournament page>.\nGood luck, and have fun!',
                   'icon_url': AuthDetails.icon
                 };
                 bot.reply(msg, reply_with_attachments);
@@ -652,13 +652,24 @@ var commands = {
       process: function(bot,msg){
         var tid = msg.text.trim().split(' ')[1];
         challongePlugin.matches(tid,function(response){
+            console.log(response);
           if(response.errors){
             bot.reply(msg,'```' + response.errors + '```');
           }else{
-            if(response){
-              response.forEach(function(index){
-                bot.reply(msg,index.match.id + ' | ' + index.match.player1_id + ' vs. ' + index.match.player2_id);
-              });
+            if(response.length){
+                var player1;
+                var player1;
+                response.forEach(function(index){
+                    if(index.match.state === 'open'){
+                        challongePlugin.participant(tid, index.match.player1_id, function(p1){
+                            player1 = p1.participant.display_name;
+                            challongePlugin.participant(tid, index.match.player2_id, function(p2){
+                                player2 = p2.participant.display_name;
+                                bot.reply(msg,'```Round ' + index.match.round + ' | ' + player1 + ' vs. ' + player2 + ' |  ' + index.match.id + '```');
+                            });
+                        })
+                    }
+                });
             }else{
               bot.reply(msg,'I can\'t find any matches for that tournament. Make sure to start the tournament first.');
             }

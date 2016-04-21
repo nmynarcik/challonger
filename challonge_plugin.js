@@ -212,8 +212,25 @@ ChallongePlugin.prototype.bracket = function (tid, callback) {
 
     if (callback) {
       callback(JSON.parse(body));
+    }else{
+    	console.log(JSON.parse(body));
+    	return JSON.parse(body);
     }
   });
+};
+
+ChallongePlugin.prototype.participant = function(tid, uid, callback) {
+	console.log('::Challonge-GetPartipant::', uid, tid);
+	var rUrl = 'https://api.challonge.com/v1/tournaments/' + tid + '/participants/' + uid + '.json?api_key=' + AuthDetails.challonge;
+	request({
+		url: rUrl
+	}, function optionalCallback(err, httpResponse, body) {
+		if(err)
+			return err;
+
+		if(callback)
+			callback(JSON.parse(body));
+	});
 };
 
 module.exports = ChallongePlugin;
