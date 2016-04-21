@@ -1,27 +1,28 @@
 var express = require('express');
-var app = express();
-var AuthDetails = require('./auth.json');
-var Botkit = require('botkit');
-var svgToPng = require('svg-to-png');
-var http = require('http');
-var request = require('request');
-var fs = require('fs');
-var Challonge = require('./challonge_plugin.js');
-var challongePlugin = new Challonge();
+    app = express(),
+    AuthDetails = require('./auth.json'),
+    Botkit = require('botkit'),
+    svgToPng = require('svg-to-png'),
+    http = require('http'),
+    request = require('request'),
+    fs = require('fs'),
+    Challonge = require('./challonge_plugin.js'),
+    challongePlugin = new Challonge();
 
-app.set('port', (process.env.PORT || 5000));
-
-//For avoidong Heroku $PORT error
-app.get('/', function(request, response) {
-  response.send('Who\'s Ready for some Tourneys?!?!?!?');
-}).listen(app.get('port'), function () {
-  console.log('App is running, server is listening on port ', app.get('port'));
-});
-
-app.use('/', express.static(__dirname + '/'));
+// app.set('port', (process.env.PORT || 5000));
+//
+// //For avoidong Heroku $PORT error
+// app.get('/', function(request, response) {
+//   response.send('Who\'s Ready for some Tourneys?!?!?!?');
+// }).listen(app.get('port'), function () {
+//   console.log('App is running, server is listening on port ', app.get('port'));
+// });
+//
+// app.use('/', express.static(__dirname + '/'));
 
 var controller = Botkit.slackbot({
-  json_file_store: 'data/'
+  json_file_store: 'data/',
+  debug: false, // spam your console
 });
 
 var bot = controller.spawn(AuthDetails);
@@ -65,6 +66,7 @@ controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', funct
   });
 });
 
+// real listeners
 controller.hears(['list'], 'direct_message,direct_mention', function(bot, message) {
     commands.list.process(bot,message);
 });
@@ -173,13 +175,11 @@ var getUserData = function(id,callback){
           bot.api.users.info({user: id},function(err,response) {
             console.log('::user data::',response);
               if(response.user){
-                  // console.log('::userdata::',response.user);
                   controller.storage.users.save(response.user, function(err) {
                     bot.botkit.log('user-stored',response.user.name);
                   });
-                  // console.log('::gotUserName::',response.user.name);
                   if(callback){
-                    callback(response.user); //TODO change this to return the user object
+                    callback(response.user);
                   }else{
                       return response.user;
                   }
@@ -261,7 +261,7 @@ var AskTourneyName = function(convo){
 }
 
 var SVGtoPNG = function(file,callback){
-    console.log('fName',file.split('svg').join('png'));
+    console.log('fName',file, tmpDirectory);
 
     svgToPng.convert(file, __dirname+'/png/').then(function(data){
         callback(data);
