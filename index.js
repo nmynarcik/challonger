@@ -28,15 +28,15 @@ var controller = Botkit.slackbot({
 
 var bot = controller.spawn(AuthDetails);
 
-var connectBot = function(){
-  bot.startRTM(function(err,bot,payload) {
+var connectBot = function () {
+  bot.startRTM(function (err, bot, payload) {
     if (err) {
-      setTimeout(function(){
+      setTimeout(function () {
         connectBot(); // keep trying every 30 secs
       }, 30000);
     }
   });
-}
+};
 
 connectBot();
 
@@ -48,7 +48,7 @@ if (!fs.existsSync(tmpDirectory)) {
 
 // simple hello world schtuff
 controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', function (bot, message) {
-
+  console.log(message);
   bot.api.reactions.add({
     timestamp: message.ts,
     channel: message.channel,
@@ -69,7 +69,16 @@ controller.hears(['hello', 'hi'], 'direct_message,direct_mention,mention', funct
   });
 });
 
-// real listeners
+controller.hears(['bug', 'fix', 'broke', 'broken'], 'direct_message,direct_mention,mention', function (bot, message) {
+  var msgObj = {
+    username: AuthDetails.name,
+    text: 'Have an issue with me? No, no, don\'t worry, my feelings are not hurt. Just log your issue over <https://github.com/nmynarcik/challonger/issues|on my github page>',
+    icon_url: AuthDetails.icon,
+  };
+  bot.reply(message, msgObj);
+});
+
+// real listeners //TODO consolidate these message.match value
 controller.hears(['list'], 'direct_message,direct_mention', function(bot, message) {
     commands.list.process(bot,message);
 });
@@ -129,13 +138,13 @@ controller.hears(['cookie'], 'ambient', function(bot,message) {
 });
 
 // reply to @bot hello
-controller.on('mention,direct_mention',function(bot,message) {
-    var retort = mentionComments[Math.floor(Math.random() * mentionComments.length)];
-    var theUser = getUserData(message.user,function(user){
-        retort = retort.replace("{NICK}", user.name);
-        bot.reply(message,retort);
-    });
-});
+// controller.on('mention,direct_mention',function(bot,message) {
+//     var retort = mentionComments[Math.floor(Math.random() * mentionComments.length)];
+//     var theUser = getUserData(message.user,function(user){
+//         retort = retort.replace("{NICK}", user.name);
+//         bot.reply(message,retort);
+//     });
+// });
 
 controller.on('ambient',function(bot,message){
     getUserData(message.user);
@@ -163,11 +172,13 @@ controller.on('rtm_close',function(bot,message){
 
 controller.hears(['uptime','identify yourself','who are you','what is your name'],'direct_message,direct_mention,mention',function(bot, message) {
 
-    var hostname = os.hostname();
-    var uptime = formatUptime(process.uptime());
+    bot.reply(message,':robot_face: I am a tournament bot named <@' + bot.identity.name + '>. I can help you create many types of tournaments. Just type `@challonger: help` to learn more.');
 
-    bot.reply(message,':robot_face: I am a bot named <@' + bot.identity.name + '>. I have been running for ' + uptime + ' on ' + hostname + '. My creator is <@' + AuthDetails.admin[0] + '>.');
+});
 
+controller.hears(['tournament','tourney','competition'],'ambient',function(bot, message) {
+  bot.reply(message,'Hey there <@' + message.user + '>! You said *' + message.match[0] + '*.');
+  commands.create.process(bot,message);
 });
 
 // reply to a direct message
@@ -177,24 +188,6 @@ controller.on('direct_message',function(bot,message) {
   bot.reply(message,'You are talking directly to me? Look, I\'m trying to work here...shouldn\'t you?');
   bot.reply(message,'LOL j/k! What can I help you with? (_psst_, type `help` to see what I can do)');
 });
-
-var formatUptime = function(uptime) {
-    var unit = 'second';
-    if (uptime > 60) {
-        uptime = uptime / 60;
-        unit = 'minute';
-    }
-    if (uptime > 60) {
-        uptime = uptime / 60;
-        unit = 'hour';
-    }
-    if (uptime != 1) {
-        unit = unit + 's';
-    }
-
-    uptime = uptime + ' ' + unit;
-    return uptime;
-}
 
 var getUserData = function(id,callback){
     console.log('::getUserData::',id);
@@ -243,28 +236,28 @@ var listAvailableCommands = function(cmds,channel){
 var AskGameType = function(convo){
     convo.ask('What game will this tournament be for? (Pong, Foosball, 8-Ball, 9-Ball)',[
         {
-            pattern: 'Pong',
+            pattern: '/Pong/gi',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
             }
         },
         {
-            pattern: 'Foosball',
+            pattern: '/Foosball/gi',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
             }
         },
         {
-            pattern: '8-Ball',
+            pattern: '/8-Ball/gi',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
             }
         },
         {
-            pattern: '9-Ball',
+            pattern: '/9-Ball/gi',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
