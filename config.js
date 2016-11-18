@@ -1,9 +1,7 @@
 module.exports = function(){
-  console.log('ENVIRONMENT:', process.env.NODE_ENV);
   switch(process.env.NODE_ENV){
     case 'development':
       return require('./auth.json');
-      break;
 
     case 'production':
       return {
@@ -14,7 +12,6 @@ module.exports = function(){
         icon: process.env.icon,
         admin: process.env.admin
       };
-      break;
 
     default:
       return 'Shit Broke!';

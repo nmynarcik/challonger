@@ -1,7 +1,7 @@
 var express = require('express');
     app = express(),
-    Config = require('./config');
-    AuthDetails = new Config(),
+    // Config = require('./config'),
+    // AuthDetails = new Config(),
     Botkit = require('botkit'),
     svgToPng = require('svg-to-png'),
     http = require('http'),
@@ -10,9 +10,6 @@ var express = require('express');
     os = require('os'),
     Challonge = require('./challonge_plugin.js'),
     challongePlugin = new Challonge();
-
-console.log('\n\n\n', process.env.NODE_ENV, '\n\n\n');
-console.log('\n\n\n', AuthDetails, '\n\n\n');
 
 if(process.env.NODE_ENV === 'production'){
   app.set('port', (process.env.PORT || 5000));
@@ -25,6 +22,17 @@ if(process.env.NODE_ENV === 'production'){
   });
 
   app.use('/', express.static(__dirname + '/'));
+
+  AuthDetails = {
+    name: process.env.name,
+    token: process.env.token,
+    challonge: process.env.challonge,
+    subdomain: process.env.subdomain,
+    icon: process.env.icon,
+    admin: process.env.admin
+  }
+}else{
+  AuthDetails = require('./auth.json');
 }
 
 var controller = Botkit.slackbot({
