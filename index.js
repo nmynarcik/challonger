@@ -1,6 +1,7 @@
 var express = require('express');
     app = express(),
-    AuthDetails = {},
+    Config = require('./config');
+    AuthDetails = new Config(),
     Botkit = require('botkit'),
     svgToPng = require('svg-to-png'),
     http = require('http'),
@@ -10,31 +11,21 @@ var express = require('express');
     Challonge = require('./challonge_plugin.js'),
     challongePlugin = new Challonge();
 
-    try{
-      AuthDetails = require('./auth.json');
-    }
-    catch(e){
-      console.log('No Auth File!!!!\n\nLooking for process variables from Heroku...');
-      AuthDetails = {
-        name: process.env.name,
-        token: process.env.token,
-        challonge: process.env.challonge,
-        subdomain: process.env.subdomain,
-        icon: process.env.icon,
-        admin: process.env.admin
-      }
-    }
+console.log('\n\n\n', process.env.NODE_ENV, '\n\n\n');
+console.log('\n\n\n', AuthDetails, '\n\n\n');
 
-app.set('port', (process.env.PORT || 5000));
+if(process.env.NODE_ENV === 'production'){
+  app.set('port', (process.env.PORT || 5000));
 
-//For avoidong Heroku $PORT error
-app.get('/', function(request, response) {
-  response.send('Who\'s Ready for some Tourneys?!?!?!?');
-}).listen(app.get('port'), function () {
-  console.log('App is running, server is listening on port ', app.get('port'));
-});
+  //For avoidong Heroku $PORT error
+  app.get('/', function(request, response) {
+    response.send('Who\'s Ready for some Tourneys?!?!?!?');
+  }).listen(app.get('port'), function () {
+    console.log('App is running, server is listening on port ', app.get('port'));
+  });
 
-app.use('/', express.static(__dirname + '/'));
+  app.use('/', express.static(__dirname + '/'));
+}
 
 var controller = Botkit.slackbot({
   json_file_store: 'data/',

@@ -4,7 +4,8 @@
   "description": "Tournament Bot for Slack",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "NODE_ENV=development node index.js",
+    "prod": "NODE_ENV=production node index.js",
     "test": "make test"
   },
   "repository": {
