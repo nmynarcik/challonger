@@ -1,6 +1,6 @@
 var express = require('express');
     app = express(),
-    AuthDetails,
+    AuthDetails = {},
     Botkit = require('botkit'),
     svgToPng = require('svg-to-png'),
     http = require('http'),
