@@ -1,4 +1,5 @@
 module.exports = function(){
+  console.log('ENVIRONMENT:', process.env.NODE_ENV);
   switch(process.env.NODE_ENV){
     case 'development':
       return require('./auth.json');
