@@ -1,5 +1,5 @@
 var challonge_node = require('challonge');
-var AuthDetails = require('./auth.json');
+var AuthDetails = { challonge: process.env.challonge };
 var request = require('request');
 
 function ChallongePlugin() {
