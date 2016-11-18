@@ -1,7 +1,5 @@
 var express = require('express');
     app = express(),
-    // Config = require('./config'),
-    // AuthDetails = new Config(),
     Botkit = require('botkit'),
     svgToPng = require('svg-to-png'),
     http = require('http'),
