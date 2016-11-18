@@ -177,6 +177,15 @@ controller.hears(['uptime','identify yourself','who are you','what is your name'
 });
 
 controller.hears(['tournament','tourney','competition'],'ambient',function(bot, message) {
+  bot.api.reactions.add({
+    timestamp: message.ts,
+    channel: message.channel,
+    name: 'trophy',
+  }, function (err, res) {
+    if (err) {
+      bot.botkit.log('Failed to add emoji reaction :(', err);
+    }
+  });
   bot.reply(message,'Hey there <@' + message.user + '>! You said *' + message.match[0] + '*.');
   commands.create.process(bot,message);
 });
@@ -348,7 +357,7 @@ var commands = {
                 rtext += '\n-------------------------------------------------------------------';
                 tData.forEach(function(index){
                   // console.log(':: tourneydata ::',index.tournament.game_id);
-                  rtext += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + getKey(gameIds,index.tournament.game_id) + '  |  ' + index.tournament.participants_count + '  |  ' + index.tournament.progress_meter + '%' + '  |  <' + index.tournament.full_challonge_url + '|Visit Tourney Page »>';
+                  rtext += '\n' + index.tournament.id + '  |  ' + index.tournament.name + '  |  ' + getKey(gameIds,index.tournament.game_id).toUpperCase() + '  |  ' + index.tournament.participants_count + '  |  ' + index.tournament.progress_meter + '%' + '  |  <' + index.tournament.full_challonge_url + '|Visit Tourney Page »>';
                 });
                 rtext += '```';
                 // console.log(rtext);
