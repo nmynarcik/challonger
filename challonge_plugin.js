@@ -1,3 +1,5 @@
+require('newrelic');
+
 var challonge_node = require('challonge');
 var AuthDetails = { challonge: process.env.challonge };
 var request = require('request');

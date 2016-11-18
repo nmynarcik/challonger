@@ -254,28 +254,28 @@ var listAvailableCommands = function(cmds,channel){
 var AskGameType = function(convo){
     convo.ask('What game will this tournament be for? (Pong, Foosball, 8-Ball, 9-Ball)',[
         {
-            pattern: '/Pong/gi',
+            pattern: 'pong',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
             }
         },
         {
-            pattern: '/Foosball/gi',
+            pattern: 'foosball',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
             }
         },
         {
-            pattern: '/8-Ball/gi',
+            pattern: '8-Ball',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
             }
         },
         {
-            pattern: '/9-Ball/gi',
+            pattern: '9-Ball',
             callback: function(callback,convo){
                 AskParticipants(convo);
                 convo.next();
@@ -334,10 +334,10 @@ var NotifyAdmin = function(msg) {
 };
 
 var gameIds = {
-    '8-Ball'      : 773,
-    '9-Ball'      : 485,
-    'Pong'        : 600,
-    'Foosball'    : 70,
+    '8-ball'      : 773,
+    '9-ball'      : 485,
+    'pong'        : 600,
+    'foosball'    : 70,
     'Unspecified' : 0
 }
 
@@ -606,7 +606,7 @@ var commands = {
             var parts = msg.text.trim().split(" ");
             var tid = parts[1];
             challongePlugin.start(tid,function(response){
-              console.log(response);
+                console.log(response);
                 if(response.errors){
                     bot.reply(msg,'```' + response.errors + '```');
                     return;
