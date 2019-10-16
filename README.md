@@ -45,7 +45,8 @@ Currently, you must use [cygwin](http://www.cygwin.com/) to install node. To do 
 * Install cygwin.
 * Open the cygwin command line with Start > Cygwin > Cygwin Bash Shell.
 * Run the below commands to download and build node.
-```git clone git://github.com/ry/node.git
+```
+git clone git://github.com/ry/node.git
 cd node
 ./configure
 make
