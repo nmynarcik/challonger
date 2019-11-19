@@ -185,7 +185,7 @@ controller.hears(['uptime','identify yourself','who are you','what is your name'
 
 });
 
-controller.hears(['tournament','tourney','competition'],'ambient',function(bot, message) {
+controller.hears(['!tournament','!tourney','!competition'],'ambient',function(bot, message) {
   bot.api.reactions.add({
     timestamp: message.ts,
     channel: message.channel,
